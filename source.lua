@@ -29,16 +29,17 @@ local Players = getService("Players")
 local CoreGui = getService("CoreGui")
 
 -- Carrega Design Tokens (Fase 1c+)
--- Tenta carregar localmente (Studio), depois via HTTP (executors), por último fallback inline
+-- Tenta carregar localmente (Studio), depois via readfile (executors), depois via GitHub, sem fallback inline
 local Tokens = nil
 if useStudio and script and script.Parent and script.Parent:FindFirstChild("design_tokens") then
 	local ok, result = pcall(require, script.Parent.design_tokens)
 	if ok and type(result) == "table" then
 		Tokens = result
+		print("[VOID] DesignTokens carregado via Studio require")
 	end
 end
 if not Tokens then
-	-- Tenta carregar via HTTP (para executors que não têm o módulo local)
+	-- Tenta carregar via readfile (para executors)
 	local fetchSuccess, fetchResult = pcall(readfile, "design_tokens.lua")
 	if fetchSuccess and #fetchResult > 0 then
 		local execSuccess, execResult = pcall(function()
@@ -46,70 +47,22 @@ if not Tokens then
 		end)
 		if execSuccess and type(execResult) == "table" then
 			Tokens = execResult
+			print("[VOID] DesignTokens carregado via readfile")
 		end
 	end
 end
 if not Tokens then
-	-- Fallback inline mínimo caso design_tokens.lua não exista (assinatura alinhada com o módulo real)
-	Tokens = {
-		Spacing = { XS = 4, SM = 8, MD = 12, LG = 16, XL = 24 },
-		Radius = { SM = 6, MD = 8, LG = 12, XL = 16 },
-		ZIndex = { Base = 1, Sidebar = 5, Dropdown = 10, Overlay = 20, Modal = 30, Notifications = 40, Tooltip = 50 },
-		GetMotion = function(name, performanceTier)
-			local defs = {
-				Instant = { duration = 0.05, style = Enum.EasingStyle.Quad, dir = Enum.EasingDirection.Out },
-				Fast = { duration = 0.15, style = Enum.EasingStyle.Quad, dir = Enum.EasingDirection.Out },
-				Smooth = { duration = 0.35, style = Enum.EasingStyle.Quint, dir = Enum.EasingDirection.Out },
-				Bouncy = { duration = 0.45, style = Enum.EasingStyle.Back, dir = Enum.EasingDirection.Out },
-				Elastic = { duration = 0.55, style = Enum.EasingStyle.Elastic, dir = Enum.EasingDirection.Out },
-				Slow = { duration = 0.75, style = Enum.EasingStyle.Quint, dir = Enum.EasingDirection.Out },
-				Emphasis = { duration = 0.65, style = Enum.EasingStyle.Exponential, dir = Enum.EasingDirection.Out },
-			}
-			local def = defs[name] or defs.Smooth
-			return TweenInfo.new(def.duration, def.style, def.dir)
-		end,
-		Tween = function(instance, props, motionName, performanceTier)
-			return TweenService:Create(instance, Tokens.GetMotion(motionName or "Smooth", performanceTier), props)
-		end,
-		MergeTheme = function(defaultTheme, override)
-			if not override then return defaultTheme end
-			local out = table.clone(defaultTheme)
-			for k, v in pairs(override) do out[k] = v end
-			return out
-		end,
-		StateColors = function(theme)
-			return {
-				Hover = theme.ElementBackgroundHover or theme.ElementBackground,
-				Idle = theme.ElementBackground,
-				Pressed = theme.ElementBackgroundHover,
-				Focused = theme.InputBackground,
-				Disabled = theme.SecondaryElementBackground or theme.ElementBackground,
-				Selected = theme.DropdownSelected or theme.TabBackgroundSelected,
-			}
-		end,
-		SemanticFromTheme = function(theme)
-			return {
-				Success = theme.Success or theme.SliderProgress or Color3.fromRGB(80, 200, 120),
-				Warning = theme.Warning or Color3.fromRGB(220, 180, 60),
-				Error = theme.Error or Color3.fromRGB(200, 70, 70),
-				Info = theme.Info or theme.SliderBackground or Color3.fromRGB(80, 160, 220),
-				Muted = theme.MutedText or Color3.new(
-					math.clamp(theme.TextColor.R * 0.65, 0, 1),
-					math.clamp(theme.TextColor.G * 0.65, 0, 1),
-					math.clamp(theme.TextColor.B * 0.65, 0, 1)
-				),
-			}
-		end,
-		ApplyTypographyRole = function(textObject, role, themeTextColor)
-			if themeTextColor then textObject.TextColor3 = themeTextColor end
-		end,
-		ApplyShadowTier = function(uiStroke, imageShadow, tierName)
-			if uiStroke then uiStroke.Thickness = 1 end
-			if imageShadow then imageShadow.ImageTransparency = 0.85 end
-		end,
-		Opacity = { Backdrop = 0.5, Disabled = 0.45, Hint = 0.35, MutedStroke = 0.85 },
-	}
-	warn("Rayfield Premium: design_tokens.lua not found, using inline fallback")
+	-- Tenta carregar via GitHub
+	local fetchSuccess, fetchResult = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/joelsonp13/Void/main/design_tokens.lua")
+	if fetchSuccess and #fetchResult > 0 then
+		local execSuccess, execResult = pcall(function()
+			return loadstring(fetchResult)()
+		end)
+		if execSuccess and type(execResult) == "table" then
+			Tokens = execResult
+			print("[VOID] DesignTokens carregado via GitHub")
+		end
+	end
 end
 
 if debugX then
@@ -1084,6 +1037,7 @@ LoadingFrame.Version.Text = Release
 local Icons = nil
 if useStudio and script and script.Parent and script.Parent:FindFirstChild("icons") then
 	Icons = require(script.Parent.icons)
+	print("[VOID] Icons carregado via Studio require")
 else
 	local fetchSuccess, fetchResult = pcall(readfile, "icons.lua")
 	if fetchSuccess and #fetchResult > 0 then
@@ -1092,9 +1046,14 @@ else
 		end)
 		if execSuccess and type(execResult) == "table" then
 			Icons = execResult
+			print("[VOID] Icons carregado via readfile")
 		end
-	else
+	end
+	if not Icons then
 		Icons = loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
+		if Icons then
+			print("[VOID] Icons carregado via GitHub")
+		end
 	end
 end
 -- Variables
