@@ -277,11 +277,261 @@ CmdTab:CreateButton({
    end,
 })
 
+-- ========================
+-- ABA ELEMENTOS
+-- ========================
+local ElementsTab = Window:CreateTab("Elements", 'layout')
+
+ElementsTab:CreateSection("Todos os Elementos Disponíveis")
+
+-- Color Picker Premium
+ElementsTab:CreateColorPicker({
+   Name = "Cor do ESP",
+   Color = Color3.fromRGB(0, 255, 120),
+   Flag = "ESPColor",
+   Callback = function(Value)
+      print("Cor selecionada:", Value)
+      Rayfield:Notify({
+         Title = "Color Picker",
+         Content = "Cor RGB: " .. math.floor(Value.R*255) .. ", " .. math.floor(Value.G*255) .. ", " .. math.floor(Value.B*255),
+         Duration = 2
+      })
+   end
+})
+
+-- Keybind Element
+ElementsTab:CreateKeybind({
+   Name = "Atalho Rápido",
+   CurrentKeybind = "F",
+   HoldToInteract = false,
+   Flag = "QuickKeybind",
+   Callback = function(Keybind)
+      local keyText = Keybind or "Desconhecido"
+      print("Keybind pressionado:", keyText)
+      Rayfield:Notify({Title = "Keybind", Content = "Atalho " .. keyText .. " ativado!", Duration = 2})
+   end
+})
+
+-- Input Element
+ElementsTab:CreateInput({
+   Name = "Nome do Jogador",
+   CurrentValue = "",
+   PlaceholderText = "Digite o nome...",
+   RemoveTextAfterFocusLost = false,
+   Flag = "PlayerNameInput",
+   Callback = function(Text)
+      print("Nome digitado:", Text)
+   end
+})
+
+-- Label Element
+ElementsTab:CreateLabel("Label de Status", 4483362458, nil, false)
+
+-- Paragraph Element
+ElementsTab:CreateParagraph({
+   Title = "Sobre Void Premium",
+   Content = "Void Premium é a versão overhaul da Rayfield com todas as features premium ativadas:\n\n✅ DesignTokens avançado\n✅ Performance Ultra (ripple, glow, bounce)\n✅ Command Palette (Ctrl+P)\n✅ Context Menu\n✅ Hotkey System\n✅ Console Debug\n✅ Sidebar Support\n✅ Todos os temas premium\n✅ Multi-dropdown com busca\n✅ SearchBox com histórico"
+})
+
+ElementsTab:CreateDivider()
+
+-- ========================
+-- ABA AVANÇADO
+-- ========================
+local AdvancedTab = Window:CreateTab("Advanced", 'cpu')
+
+AdvancedTab:CreateSection("Features Avançadas")
+
+-- Sidebar Demo
+AdvancedTab:CreateButton({
+   Name = "Criar Sidebar",
+   Callback = function()
+      local sidebar = Rayfield:CreateSidebar({
+         Name = "Void Sidebar",
+         Collapsed = false
+      })
+
+      sidebar:AddCategory({
+         Name = "Navegação",
+         Children = {"Main", "Tools", "Commands", "Elements", "Advanced"}
+      })
+
+      sidebar:AddItem({
+         Name = "Abrir Console",
+         Callback = function()
+            Elements.UIPageLayout:JumpTo(Elements["Elements"])
+         end
+      })
+
+      sidebar:AddItem({
+         Name = "Toggle Dev Overlay",
+         Callback = function()
+            Rayfield:EnableDevOverlay()
+         end
+      })
+
+      Rayfield:Notify({
+         Title = "Sidebar",
+         Content = "Sidebar criado! Você pode recolher/expandir com o botão no canto superior direito.",
+         Duration = 4
+      })
+   end
+})
+
+-- Performance Tier Info
+AdvancedTab:CreateLabel("Performance Tier: " .. Rayfield:GetPerformanceTier(), nil, nil, false)
+
+-- Theme Info
+AdvancedTab:CreateLabel("Tema Atual: PremiumDark", nil, nil, false)
+
+-- DesignTokens Info
+local dt = Rayfield:GetDesignTokens()
+if dt then
+   AdvancedTab:CreateLabel("DesignTokens: Carregado ✅", nil, Color3.fromRGB(0, 255, 120), false)
+   AdvancedTab:CreateLabel("Spacing: XS=" .. dt.Spacing.XS .. ", SM=" .. dt.Spacing.SM .. ", MD=" .. dt.Spacing.MD, nil, nil, false)
+   AdvancedTab:CreateLabel("ZIndex: Base=" .. dt.ZIndex.Base .. ", Modal=" .. dt.ZIndex.Modal, nil, nil, false)
+else
+   AdvancedTab:CreateLabel("DesignTokens: Fallback ⚠️", nil, Color3.fromRGB(255, 200, 0), false)
+end
+
+AdvancedTab:CreateDivider()
+
+AdvancedTab:CreateSection("Notificações Avançadas")
+
+AdvancedTab:CreateButton({
+   Name = "Testar Notificações",
+   Callback = function()
+      -- Success notification
+      Rayfield:Notify({
+         Title = "✅ Sucesso",
+         Content = "Operação concluída com sucesso!",
+         Duration = 3,
+         Image = 4483362458
+      })
+
+      -- Warning notification
+      task.wait(1)
+      Rayfield:Notify({
+         Title = "⚠️ Aviso",
+         Content = "Esta ação requer atenção especial.",
+         Duration = 4,
+         Image = 4483362458
+      })
+
+      -- Error notification
+      task.wait(1)
+      Rayfield:Notify({
+         Title = "❌ Erro",
+         Content = "Não foi possível completar a operação.",
+         Duration = 5,
+         Image = 4483362458
+      })
+
+      -- Info notification
+      task.wait(1)
+      Rayfield:Notify({
+         Title = "ℹ️ Informação",
+         Content = "Void Premium está usando Performance Tier: " .. Rayfield:GetPerformanceTier(),
+         Duration = 3,
+         Image = 4483362458
+      })
+   end
+})
+
+-- ========================
+-- ABA CONFIGURAÇÕES
+-- ========================
+local SettingsTab = Window:CreateTab("Settings", 'settings')
+
+SettingsTab:CreateSection("Configurações do Void Premium")
+
+-- Toggle para Command Palette
+SettingsTab:CreateToggle({
+   Name = "Command Palette (Ctrl+P)",
+   CurrentValue = true,
+   Flag = "CmdPaletteToggle",
+   Callback = function(Value)
+      print("Command Palette:", Value and "Ativado" or "Desativado")
+   end
+})
+
+-- Dropdown para Performance Tier
+SettingsTab:CreateDropdown({
+   Name = "Performance Tier",
+   Options = {"Low", "Medium", "Ultra"},
+   CurrentOption = {"Ultra"},
+   Flag = "PerfTier",
+   Callback = function(Options)
+      print("Performance Tier selecionado:", Options[1])
+   end
+})
+
+-- Slider para Transparência
+SettingsTab:CreateSlider({
+   Name = "Transparência da UI",
+   Range = {0, 100},
+   Increment = 5,
+   Suffix = "%",
+   CurrentValue = 0,
+   Flag = "UITransparency",
+   Callback = function(Value)
+      print("Transparência:", Value .. "%")
+   end
+})
+
+SettingsTab:CreateDivider()
+
+SettingsTab:CreateSection("Informações do Sistema")
+
+SettingsTab:CreateParagraph({
+   Title = "Void Premium Overhaul",
+   Content = "Build: UU2NX\nVersão: 1.746 Premium\nDesenvolvedor: Lunara Void\n\nTodas as features premium estão ativadas e funcionando!"
+})
+
+SettingsTab:CreateButton({
+   Name = "Salvar Configuração",
+   Callback = function()
+      Rayfield:Notify({
+         Title = "Configuração",
+         Content = "Configurações salvas com sucesso!",
+         Duration = 2
+      })
+   end
+})
+
+SettingsTab:CreateButton({
+   Name = "Carregar Configuração",
+   Callback = function()
+      Rayfield:LoadConfiguration()
+      Rayfield:Notify({
+         Title = "Configuração",
+         Content = "Configurações carregadas!",
+         Duration = 2
+      })
+   end
+})
+
 Rayfield:LoadConfiguration()
 
 -- Notificação inicial
 Rayfield:Notify({
    Title = "Void Premium Overhaul",
-   Content = "Build UU2NX | v1.746 Premium\nDesignTokens: " .. (Rayfield:GetDesignTokens() and "OK" or "Fallback") .. "\nCtrl+P para abrir comandos",
+   Content = "Build UU2NX | v1.746 Premium\nDesignTokens: " .. (Rayfield:GetDesignTokens() and "OK" or "Fallback") .. "\nCtrl+P para abrir comandos\nTodas as features premium ativadas!",
    Duration = 8
+})
+
+-- Notificação de boas-vindas
+task.wait(2)
+Rayfield:Notify({
+   Title = "👑 Bem-vindo",
+   Content = "Você está usando Void Premium Overhaul - a versão mais poderosa da Rayfield!\n\nExplore todas as abas para ver todas as features.",
+   Duration = 10
+})
+
+-- Dica de uso
+task.wait(4)
+Rayfield:Notify({
+   Title = "💡 Dica",
+   Content = "Pressione Ctrl+P para abrir a Command Palette e buscar abas/comandos rapidamente!",
+   Duration = 6
 })

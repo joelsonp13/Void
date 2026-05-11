@@ -3957,8 +3957,17 @@ function RayfieldLibrary:CreateWindow(Settings)
 				rfTween(Dropdown.UIStroke, { Transparency = 0 }, "Fast")
 				if Debounce then return end
 				if Dropdown.List.Visible then
-					-- Only close if mouse is NOT over the dropdown or its list
-					if not isMouseOverDropdown() then
+					-- Check if mouse is over the dropdown LIST area (not just the header)
+					local mousePos = UserInputService:GetMouseLocation()
+					local listAbsPos = Dropdown.List.AbsolutePosition
+					local listAbsSize = Dropdown.List.AbsoluteSize
+
+					-- Only prevent closing if mouse is over the list area (not the header)
+					local mouseOverList = mousePos.X >= listAbsPos.X and mousePos.X <= listAbsPos.X + listAbsSize.X and
+									   mousePos.Y >= listAbsPos.Y and mousePos.Y <= listAbsPos.Y + listAbsSize.Y
+
+					if not mouseOverList then
+						-- Mouse is not over the list, so close the dropdown
 						Debounce = true
 						rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 45) }, "Smooth")
 						for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
@@ -3980,6 +3989,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 						Debounce = false
 					end
 				else
+					-- Dropdown is closed, open it
 					rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 180) }, "Smooth")
 					Dropdown.List.Visible = true
 					rfTween(Dropdown.List, { ScrollBarImageTransparency = 0.7 }, "Fast")
