@@ -19,7 +19,7 @@ if not Tokens then
 	Tokens = {
 		Spacing = { XS = 4, SM = 8, MD = 12, LG = 16, XL = 24 },
 		Radius = { SM = 6, MD = 8, LG = 12, XL = 16 },
-		ZIndex = { Base = 1, Dropdown = 10, Overlay = 20, Modal = 30, Notifications = 40, Tooltip = 50 },
+		ZIndex = { Base = 1, Sidebar = 5, Dropdown = 10, Overlay = 20, Modal = 30, Notifications = 40, Tooltip = 50 },
 		GetMotion = function(name) return TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out) end,
 		Tween = function(instance, props, motionName)
 			return TweenService:Create(instance, Tokens.GetMotion(motionName or "Smooth"), props)
@@ -1052,7 +1052,10 @@ local notifyActiveCount = 0
 local MAX_CONCURRENT_NOTIFICATIONS = 3
 local paletteInputConnection = nil
 local paletteOpen = false
-local paletteOverlayFolder = nil
+local paletteOverlayId: number? = nil
+local paletteContentBucket: Folder? = nil
+local palettePanelRoot: Frame? = nil
+local paletteSavedDisplayOrder = 0
 local lastFocusedGuiForPalette = nil
 local devOverlayConn = nil
 local devOverlayLabel = nil
@@ -1178,6 +1181,7 @@ local OverlaySystem = {
 		local id = overlayIdCounter
 		
 		local zMap = {
+			Sidebar = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Sidebar) or 5,
 			Dropdown = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Dropdown) or 10,
 			Overlay = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Overlay) or 20,
 			Modal = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Modal) or 30,
@@ -1221,6 +1225,7 @@ local OverlaySystem = {
 			content = config.content,
 			onClose = config.onClose,
 			zIndex = zIndex,
+			detachContentBeforeDestroy = config.detachContentBeforeDestroy,
 		}
 		
 		if config.onOpen then
@@ -1233,6 +1238,12 @@ local OverlaySystem = {
 	close = function(id)
 		local overlay = activeOverlays[id]
 		if not overlay then return end
+		if overlay.detachContentBeforeDestroy and overlay.content then
+			local holder = overlay.detachContentBeforeDestroy
+			if holder and holder.Parent then
+				overlay.content.Parent = holder
+			end
+		end
 		if overlay.onClose then
 			pcall(overlay.onClose)
 		end
@@ -1254,6 +1265,7 @@ local OverlaySystem = {
 	
 	getZIndex = function(level)
 		local zMap = {
+			Sidebar = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Sidebar) or 5,
 			Dropdown = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Dropdown) or 10,
 			Overlay = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Overlay) or 20,
 			Modal = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Modal) or 30,
@@ -1382,6 +1394,22 @@ local function rfStaggerIn(elements: { Instance }, baseDelay: number?, perElemen
 	end
 end
 
+local function refreshPalettePanelTheme()
+	if not palettePanelRoot then
+		return
+	end
+	palettePanelRoot.BackgroundColor3 = SelectedTheme.Background
+	local filter = palettePanelRoot:FindFirstChild("Filter")
+	if filter and filter:IsA("TextBox") then
+		filter.BackgroundColor3 = SelectedTheme.InputBackground
+		filter.TextColor3 = SelectedTheme.TextColor
+		local fs = filter:FindFirstChildOfClass("UIStroke")
+		if fs then
+			fs.Color = SelectedTheme.InputStroke
+		end
+	end
+end
+
 local function ChangeTheme(Theme)
 	local base = RayfieldLibrary.Theme.Default
 	if typeof(Theme) == 'string' then
@@ -1431,6 +1459,28 @@ local function ChangeTheme(Theme)
 			end
 		end
 	end
+	if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+		local tbTitle = Topbar:FindFirstChild("Title")
+		if tbTitle and tbTitle:IsA("TextLabel") then
+			DesignTokensMod.ApplyTypographyRole(tbTitle, "Title", SelectedTheme.TextColor)
+		end
+		local lf = Main:FindFirstChild("LoadingFrame")
+		if lf then
+			local lt = lf:FindFirstChild("Title")
+			local ls = lf:FindFirstChild("Subtitle")
+			local lv = lf:FindFirstChild("Version")
+			if lt and lt:IsA("TextLabel") then
+				DesignTokensMod.ApplyTypographyRole(lt, "Title", SelectedTheme.TextColor)
+			end
+			if ls and ls:IsA("TextLabel") then
+				DesignTokensMod.ApplyTypographyRole(ls, "Subtitle", SelectedTheme.TextColor)
+			end
+			if lv and lv:IsA("TextLabel") then
+				DesignTokensMod.ApplyTypographyRole(lv, "Caption", SelectedTheme.TextColor)
+			end
+		end
+	end
+	refreshPalettePanelTheme()
 end
 
 local function getIcon(name : string): {id: number, imageRectSize: Vector2, imageRectOffset: Vector2}
@@ -1725,6 +1775,9 @@ local function runSingleNotification(data)
 	newNotification.BackgroundColor3 = SelectedTheme.Background
 	newNotification.UIStroke.Color = notificationStrokeColor(data)
 	newNotification.Icon.ImageColor3 = SelectedTheme.TextColor
+	if DesignTokensMod and DesignTokensMod.ApplyShadowTier then
+		DesignTokensMod.ApplyShadowTier(newNotification.UIStroke, newNotification.Shadow, "medium")
+	end
 
 	newNotification.BackgroundTransparency = 1
 	newNotification.Title.TextTransparency = 1
@@ -1891,21 +1944,17 @@ local function paletteFuzzyMatch(haystack: string, needle: string): boolean
 end
 
 local function paletteHighlightRow(index)
-	for _, ch in ipairs(paletteScroll:GetChildren()) do
-		if ch:IsA("GuiButton") and ch.Name == "PaletteRow" then
-			if ch:FindFirstChildOfClass("UIStroke") then
-				ch:FindFirstChildOfClass("UIStroke"):Destroy()
-			end
-			if ch == paletteScroll:FindFirstChild("PaletteRow", false) and ch.LayoutOrder == index then
-				-- this is the target — but we use index matching
-			end
-			ch.BackgroundColor3 = SelectedTheme.ElementBackground
-		end
+	if not paletteScroll then
+		return
 	end
 	local rowNum = 0
 	for _, ch in ipairs(paletteScroll:GetChildren()) do
 		if ch:IsA("GuiButton") and ch.Name == "PaletteRow" then
 			rowNum += 1
+			local existingStroke = ch:FindFirstChildOfClass("UIStroke")
+			if existingStroke then
+				existingStroke:Destroy()
+			end
 			if rowNum == index then
 				local stroke = Instance.new("UIStroke")
 				stroke.Color = SelectedTheme.SliderBackground or Color3.fromRGB(50, 138, 220)
@@ -1913,33 +1962,22 @@ local function paletteHighlightRow(index)
 				stroke.Transparency = 0.25
 				stroke.Parent = ch
 				ch.BackgroundColor3 = SelectedTheme.DropdownSelected or Color3.fromRGB(40, 40, 40)
-				-- Scroll para manter visível
-				if paletteScroll then
-					local yPos = ch.AbsolutePosition.Y - (paletteScroll :: ScrollingFrame).AbsolutePosition.Y
-					local scrollHeight = (paletteScroll :: ScrollingFrame).AbsoluteSize.Y
-					if yPos < 0 or yPos + ch.AbsoluteSize.Y > scrollHeight then
-						(paletteScroll :: ScrollingFrame).CanvasPosition = Vector2.new(0, ch.AbsolutePosition.Y - (paletteScroll :: ScrollingFrame).AbsolutePosition.Y - 8)
-					end
+				local scroll = paletteScroll :: ScrollingFrame
+				local yPos = ch.AbsolutePosition.Y - scroll.AbsolutePosition.Y
+				local scrollHeight = scroll.AbsoluteSize.Y
+				if yPos < 0 or yPos + ch.AbsoluteSize.Y > scrollHeight then
+					scroll.CanvasPosition = Vector2.new(0, ch.AbsolutePosition.Y - scroll.AbsolutePosition.Y - 8)
 				end
+			else
+				ch.BackgroundColor3 = SelectedTheme.ElementBackground
 			end
 		end
 	end
 end
 
 local function closeCommandPalette()
-	if not paletteOpen then
-		return
-	end
-	paletteOpen = false
-	if paletteOverlayFolder then
-		paletteOverlayFolder.Visible = false
-	end
-	local tb = lastFocusedGuiForPalette
-	lastFocusedGuiForPalette = nil
-	if tb and tb.Parent then
-		pcall(function()
-			tb:CaptureFocus()
-		end)
+	if paletteOverlayId and OverlaySystem.isOpen(paletteOverlayId) then
+		OverlaySystem.close(paletteOverlayId)
 	end
 end
 
@@ -1971,6 +2009,9 @@ local function rebuildPaletteList(filterText: string)
 			local pad = Instance.new("UIPadding")
 			pad.PaddingLeft = UDim.new(0, 10)
 			pad.Parent = row
+			if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+				DesignTokensMod.ApplyTypographyRole(row, "Body", SelectedTheme.TextColor)
+			end
 			row.Parent = paletteScroll
 			local cb = function()
 				pcall(entry.Activate)
@@ -1988,6 +2029,7 @@ local function rebuildPaletteList(filterText: string)
 			row.Name = "PaletteRow"
 			row.BackgroundColor3 = SelectedTheme.ElementBackground
 			row.Size = UDim2.new(1, -8, 0, 32)
+			row.AutoButtonColor = true
 			row.Text = label
 			row.Font = Enum.Font.Gotham
 			row.TextSize = 14
@@ -1997,6 +2039,9 @@ local function rebuildPaletteList(filterText: string)
 			local pad = Instance.new("UIPadding")
 			pad.PaddingLeft = UDim.new(0, 10)
 			pad.Parent = row
+			if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+				DesignTokensMod.ApplyTypographyRole(row, "Body", SelectedTheme.TextColor)
+			end
 			row.Parent = paletteScroll
 			local cb = function()
 				pcall(cmd.Callback)
@@ -2017,6 +2062,9 @@ local function rebuildPaletteList(filterText: string)
 		empty.Font = Enum.Font.Gotham
 		empty.TextSize = 13
 		empty.ZIndex = (paletteScroll :: ScrollingFrame).ZIndex + 1
+		if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+			DesignTokensMod.ApplyTypographyRole(empty, "Caption", SelectedTheme.PlaceholderColor or SelectedTheme.TextColor)
+		end
 		empty.Parent = paletteScroll
 	end
 	if #paletteItemsList > 0 then
@@ -2028,36 +2076,24 @@ local function rebuildPaletteList(filterText: string)
 end
 
 local function ensureCommandPaletteGui()
-	if paletteOverlayFolder and paletteOverlayFolder.Parent then
+	if palettePanelRoot and palettePanelRoot.Parent then
 		return
 	end
+	if not paletteContentBucket then
+		local bucket = Instance.new("Folder")
+		bucket.Name = "__RayfieldPaletteBucket__"
+		bucket.Parent = Rayfield
+		paletteContentBucket = bucket
+	end
 	local zModal = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Modal) or 30
-	local root = Instance.new("Frame")
-	root.Name = "CommandPaletteRoot"
-	root.Size = UDim2.new(1, 0, 1, 0)
-	root.BackgroundTransparency = 1
-	root.ZIndex = zModal
-	root.Visible = false
-	root.Parent = Rayfield
-
-	local scrim = Instance.new("TextButton")
-	scrim.Name = "Scrim"
-	scrim.Size = UDim2.new(1, 0, 1, 0)
-	scrim.BackgroundColor3 = Color3.new(0, 0, 0)
-	scrim.BackgroundTransparency = 0.5
-	scrim.Text = ""
-	scrim.AutoButtonColor = false
-	scrim.ZIndex = zModal
-	scrim.Parent = root
-	scrim.MouseButton1Click:Connect(closeCommandPalette)
-
 	local panel = Instance.new("Frame")
 	panel.Name = "Panel"
 	panel.Size = UDim2.new(0, 440, 0, 300)
 	panel.Position = UDim2.new(0.5, -220, 0.12, 0)
 	panel.BackgroundColor3 = SelectedTheme.Background
 	panel.ZIndex = zModal + 1
-	panel.Parent = root
+	panel.Visible = false
+	panel.Parent = paletteContentBucket
 
 	local pStroke = Instance.new("UIStroke")
 	pStroke.Color = SelectedTheme.ElementStroke
@@ -2081,6 +2117,9 @@ local function ensureCommandPaletteGui()
 	filter.TextSize = 15
 	filter.ZIndex = zModal + 2
 	filter.Parent = panel
+	if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+		DesignTokensMod.ApplyTypographyRole(filter, "Body", SelectedTheme.TextColor)
+	end
 
 	local fStroke = Instance.new("UIStroke")
 	fStroke.Color = SelectedTheme.InputStroke
@@ -2105,9 +2144,9 @@ local function ensureCommandPaletteGui()
 	listLayout.Padding = UDim.new(0, 4)
 	listLayout.Parent = scroll
 
+	palettePanelRoot = panel
 	paletteFilterBox = filter
 	paletteScroll = scroll
-	paletteOverlayFolder = root
 
 	filter:GetPropertyChangedSignal("Text"):Connect(function()
 		if paletteOpen then
@@ -2120,24 +2159,44 @@ local function openCommandPalette()
 	if rayfieldDestroyed or Hidden then
 		return
 	end
+	if paletteOverlayId and OverlaySystem.isOpen(paletteOverlayId) then
+		return
+	end
 	ensureCommandPaletteGui()
 	lastFocusedGuiForPalette = GuiService:GetFocusedTextBox()
+	refreshPalettePanelTheme()
 	paletteOpen = true
-	if paletteOverlayFolder then
-		local panel = paletteOverlayFolder:FindFirstChild("Panel") :: Frame?
-		if panel then
-			panel.BackgroundColor3 = SelectedTheme.Background
-			local filter = panel:FindFirstChild("Filter") :: TextBox?
-			if filter then
-				filter.BackgroundColor3 = SelectedTheme.InputBackground
-				filter.TextColor3 = SelectedTheme.TextColor
-				local fs = filter:FindFirstChildOfClass("UIStroke")
-				if fs then
-					fs.Color = SelectedTheme.InputStroke
-				end
+	pcall(function()
+		paletteSavedDisplayOrder = Rayfield.DisplayOrder
+		Rayfield.DisplayOrder = math.max(paletteSavedDisplayOrder, 200)
+	end)
+	local backdropOp = (DesignTokensMod and DesignTokensMod.Opacity and DesignTokensMod.Opacity.Backdrop) or 0.5
+	paletteOverlayId = OverlaySystem.show({
+		level = "Modal",
+		opacity = backdropOp,
+		dismissOnBackdrop = true,
+		content = palettePanelRoot,
+		detachContentBeforeDestroy = paletteContentBucket,
+		onClose = function()
+			paletteOpen = false
+			paletteOverlayId = nil
+			pcall(function()
+				Rayfield.DisplayOrder = paletteSavedDisplayOrder
+			end)
+			local tb = lastFocusedGuiForPalette
+			lastFocusedGuiForPalette = nil
+			if tb and tb.Parent then
+				pcall(function()
+					tb:CaptureFocus()
+				end)
 			end
-		end
-		paletteOverlayFolder.Visible = true
+			if palettePanelRoot then
+				palettePanelRoot.Visible = false
+			end
+		end,
+	})
+	if palettePanelRoot then
+		palettePanelRoot.Visible = true
 	end
 	if paletteFilterBox then
 		paletteFilterBox.Text = ""
@@ -2586,6 +2645,9 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 	local Passthrough = false
 	Topbar.Title.Text = Settings.Name
+	if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+		DesignTokensMod.ApplyTypographyRole(Topbar.Title, "Title", SelectedTheme.TextColor)
+	end
 
 	Main.Size = UDim2.new(0, 420, 0, 100)
 	Main.Visible = true
@@ -2603,6 +2665,13 @@ function RayfieldLibrary:CreateWindow(Settings)
 	LoadingFrame.Version.TextTransparency = 1
 	LoadingFrame.Title.Text = Settings.LoadingTitle or "Rayfield"
 	LoadingFrame.Subtitle.Text = Settings.LoadingSubtitle or "Interface Suite"
+	if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+		DesignTokensMod.ApplyTypographyRole(LoadingFrame.Title, "Title", SelectedTheme.TextColor)
+		DesignTokensMod.ApplyTypographyRole(LoadingFrame.Subtitle, "Subtitle", SelectedTheme.TextColor)
+		if LoadingFrame:FindFirstChild("Version") then
+			DesignTokensMod.ApplyTypographyRole(LoadingFrame.Version, "Caption", SelectedTheme.TextColor)
+		end
+	end
 
 	if Settings.LoadingTitle ~= "Rayfield Interface Suite" then
 		LoadingFrame.Version.Text = "Rayfield UI"
@@ -4809,12 +4878,14 @@ function RayfieldLibrary:Destroy()
 		paletteInputConnection = nil
 	end
 	closeCommandPalette()
-	if paletteOverlayFolder then
-		paletteOverlayFolder:Destroy()
-		paletteOverlayFolder = nil
+	if paletteContentBucket then
+		paletteContentBucket:Destroy()
+		paletteContentBucket = nil
 	end
+	palettePanelRoot = nil
 	paletteFilterBox = nil
 	paletteScroll = nil
+	paletteOverlayId = nil
 	if devOverlayConn then
 		devOverlayConn:Disconnect()
 		devOverlayConn = nil
@@ -5099,6 +5170,9 @@ function RayfieldLibrary:CreateContextMenu(config)
 				pcall(item.Callback)
 				ctx:Hide()
 			end)
+			if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
+				DesignTokensMod.ApplyTypographyRole(btn, "Body", item.Color or SelectedTheme.TextColor)
+			end
 			
 			totalHeight += 36
 		end
@@ -5570,6 +5644,9 @@ local SidebarInstances = {}
 function RayfieldLibrary:CreateSidebar(config, windowObj)
     config = config or {}
     if not windowObj then return end
+    local zSidebar = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Sidebar) or 5
+    local zSidebarChrome = zSidebar + 1
+    local zSidebarItem = zSidebar + 2
     local sidebarName = config.Name or 'Sidebar'
     local isCollapsed = config.Collapsed or false
     local sidebarFrame = Instance.new('Frame')
@@ -5578,7 +5655,7 @@ function RayfieldLibrary:CreateSidebar(config, windowObj)
     sidebarFrame.Position = UDim2.new(0, 0, 0, 0)
     sidebarFrame.BackgroundColor3 = SelectedTheme.Topbar
     sidebarFrame.BorderSizePixel = 0
-    sidebarFrame.ZIndex = 5
+    sidebarFrame.ZIndex = zSidebar
     sidebarFrame.Parent = TabList.Parent
     local sidebarStroke = Instance.new('UIStroke')
     sidebarStroke.Color = SelectedTheme.ElementStroke
@@ -5594,7 +5671,7 @@ function RayfieldLibrary:CreateSidebar(config, windowObj)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 15
     title.TextXAlignment = Enum.TextXAlignment.Left
-    title.ZIndex = 6
+    title.ZIndex = zSidebarChrome
     title.Parent = sidebarFrame
     local toggleBtn = Instance.new('ImageButton')
     toggleBtn.Name = 'ToggleBtn'
@@ -5603,7 +5680,7 @@ function RayfieldLibrary:CreateSidebar(config, windowObj)
     toggleBtn.BackgroundTransparency = 1
     toggleBtn.Image = isCollapsed and 'rbxassetid://11036884234' or 'rbxassetid://10137941941'
     toggleBtn.ImageColor3 = SelectedTheme.TextColor
-    toggleBtn.ZIndex = 6
+    toggleBtn.ZIndex = zSidebarChrome
     toggleBtn.Parent = sidebarFrame
     local list = Instance.new('ScrollingFrame')
     list.Name = 'ItemList'
@@ -5614,7 +5691,7 @@ function RayfieldLibrary:CreateSidebar(config, windowObj)
     list.CanvasSize = UDim2.new(0, 0, 0, 0)
     list.AutomaticCanvasSize = Enum.AutomaticSize.Y
     list.Visible = not isCollapsed
-    list.ZIndex = 6
+    list.ZIndex = zSidebarChrome
     list.Parent = sidebarFrame
     local listLayout = Instance.new('UIListLayout')
     listLayout.Padding = UDim.new(0, 2)
@@ -5635,7 +5712,7 @@ function RayfieldLibrary:CreateSidebar(config, windowObj)
             btn.TextXAlignment = Enum.TextXAlignment.Left
             btn.AutoButtonColor = true
             btn.BorderSizePixel = 0
-            btn.ZIndex = 7
+            btn.ZIndex = zSidebarItem
             btn.Parent = list
             local itemPad = Instance.new('UIPadding')
             itemPad.PaddingLeft = UDim.new(0, 14)
@@ -5670,7 +5747,7 @@ function RayfieldLibrary:CreateSidebar(config, windowObj)
             cat.Font = Enum.Font.GothamBold
             cat.TextSize = 11
             cat.TextXAlignment = Enum.TextXAlignment.Left
-            cat.ZIndex = 7
+            cat.ZIndex = zSidebarItem
             cat.Parent = list
             local catPad = Instance.new('UIPadding')
             catPad.PaddingLeft = UDim.new(0, 10)

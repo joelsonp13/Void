@@ -49,7 +49,7 @@
 	       Backdrop=0.5 | Disabled=0.45 | Hint=0.35 | MutedStroke=0.85
 	   
 	   Tokens.ZIndex:
-	       Base=1 | Dropdown=10 | DropdownItem=50 | Overlay=20
+	       Base=1 | Sidebar=5 | Dropdown=10 | DropdownItem=50 | Overlay=20
 	       Modal=30 | Notifications=40 | Tooltip=50
 	   
 	   Tokens.Shadow (tiers): weak → medium → strong → glow → neon
@@ -75,6 +75,9 @@
 	   
 	   Tokens.Tween(instance, props, motionName?, tier?) → Tween
 	       Shorthand: Tokens.Tween(frame, {Size = UDim2.new(1,0,1,0)}, "Bouncy")
+	   
+	   OverlaySystem (source.lua): use show({ detachContentBeforeDestroy = holderFolder })
+	       para modais reutilizáveis (ex.: command palette) sem destruir o painel ao fechar.
 	   
 	   Tokens.StateColors(theme) → { Hover, Idle, Pressed, Focused, Disabled, Selected }
 	   
@@ -141,6 +144,8 @@ M.Opacity = {
 
 M.ZIndex = {
 	Base = 1,
+	-- Barra lateral opcional (CreateSidebar): acima do conteúdo base, abaixo de dropdowns
+	Sidebar = 5,
 	Dropdown = 10,
 	DropdownItem = 50,
 	Overlay = 20,
