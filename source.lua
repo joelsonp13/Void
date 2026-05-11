@@ -4101,7 +4101,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			end
 			SetDropdownOptions()
 
-			if DropdownSettings.ListSearch and DropdownSettings.MultipleOptions and not Dropdown.List:FindFirstChild("__RayfieldListFilter__") then
+			if DropdownSettings.ListSearch and not Dropdown.List:FindFirstChild("__RayfieldListFilter__") then
 				local sb = Instance.new("TextBox")
 				sb.Name = "__RayfieldListFilter__"
 				sb.BackgroundColor3 = SelectedTheme.InputBackground

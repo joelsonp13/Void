@@ -135,6 +135,7 @@ local themesDropdown = ToolsTab:CreateDropdown({
    Options = {"Default", "PremiumDark", "AMOLED", "Ocean", "Amethyst", "DarkBlue", "Bloom", "Light", "Serenity", "AmberGlow", "Green"},
    CurrentOption = {"PremiumDark"},
    Flag = "ThemeSelect",
+   ListSearch = true,
    Callback = function(Options)
       Window.ModifyTheme(Options[1])
    end,
