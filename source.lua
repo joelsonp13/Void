@@ -3931,6 +3931,16 @@ function RayfieldLibrary:CreateWindow(Settings)
 				rfTween(Dropdown.UIStroke, { Transparency = 0 }, "Fast")
 				if Debounce then return end
 				if Dropdown.List.Visible then
+					-- Check if search box is active before closing
+					local searchFilter = Dropdown.List:FindFirstChild("__RayfieldListFilter__")
+					if searchFilter then
+						local searchInput = searchFilter:FindFirstChild("SearchInput")
+						if searchInput and searchInput:GetAttribute("SearchActive") then
+							-- Search is active, don't close the dropdown
+							return
+						end
+					end
+
 					Debounce = true
 					rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 45) }, "Smooth")
 					for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
@@ -4162,14 +4172,15 @@ function RayfieldLibrary:CreateWindow(Settings)
 				end)
 
 				-- Prevent dropdown from closing when clicking on search box
-				sb.MouseButton1Down:Connect(function()
-					-- Stop propagation to prevent dropdown from closing
-					local connection
-					connection = UserInputService.InputChanged:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.MouseMovement then
-							connection:Disconnect()
-						end
-					end)
+				sb.Focused:Connect(function()
+					-- When search box gets focus, prevent dropdown from closing
+					-- We'll use a flag to indicate that search is active
+					sb:SetAttribute("SearchActive", true)
+				end)
+
+				sb.FocusLost:Connect(function()
+					-- When search box loses focus, reset the flag
+					sb:SetAttribute("SearchActive", false)
 				end)
 
 				-- Auto-focus search box when dropdown opens
