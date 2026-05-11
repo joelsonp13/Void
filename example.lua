@@ -1,6 +1,7 @@
 debugX = true
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Carrega a biblioteca Rayfield do repositório GitHub
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/joelsonp13/Void/main/source.lua'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "Rayfield Example Window",
@@ -40,14 +41,121 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
-local Tab = Window:CreateTab("Tab Example", 4483362458) -- Title, Image
+local Tab = Window:CreateTab("Tab 1", 4483362458) -- Title, Image
+local Tab2 = Window:CreateTab("Tab 2", 'key-round') -- Title, Image (Lucide icon)
 
 local Section = Tab:CreateSection("Section Example")
 
 local Button = Tab:CreateButton({
-   Name = "Button Example",
+   Name = "Change Theme",
    Callback = function()
-   -- The function that takes place when the button is pressed
+      Window.ModifyTheme('DarkBlue')
+   end,
+})
+
+local Toggle = Tab:CreateToggle({
+   Name = "Toggle Example",
+   CurrentValue = false,
+   Flag = "Toggle1adwawd",
+   Callback = function(Value)
+      print("Toggle value changed to:", Value)
+   end,
+})
+
+local ColorPicker = Tab:CreateColorPicker({
+   Name = "Color Picker",
+   Color = Color3.fromRGB(255,255,255),
+   Flag = "ColorPicker1awd",
+   Callback = function(Value)
+      print("Color selected:", Value)
+   end
+})
+
+local Slider = Tab:CreateSlider({
+   Name = "Slider Example",
+   Range = {0, 100},
+   Increment = 10,
+   Suffix = "Bananas",
+   CurrentValue = 40,
+   Flag = "Slider1dawd",
+   Callback = function(Value)
+      print("Slider value:", Value)
+   end,
+})
+
+local Input = Tab:CreateInput({
+   Name = "Input Example",
+   CurrentValue = "Helo",
+   PlaceholderText = "Adaptive Input",
+   RemoveTextAfterFocusLost = false,
+   Flag = 'Input1',
+   Callback = function(Text)
+      print("Input text:", Text)
+   end,
+})
+
+local thoptions = {}
+for themename, theme in pairs(Rayfield.Theme) do
+   table.insert(thoptions, themename)
+end
+
+local Dropdown = Tab:CreateDropdown({
+   Name = "Theme",
+   Options = thoptions,
+   CurrentOption = {"Default"},
+   MultipleOptions = false,
+   Flag = "Dropdown1",
+   Callback = function(Options)
+      Window.ModifyTheme(Options[1])
+   end,
+})
+
+local Keybind = Tab:CreateKeybind({
+   Name = "Keybind Example",
+   CurrentKeybind = "Q",
+   HoldToInteract = false,
+   Flag = "Keybind1",
+   Callback = function(Keybind)
+      print("Keybind pressed:", Keybind)
+   end,
+})
+
+local Label = Tab:CreateLabel("Label Example")
+
+local Label2 = Tab:CreateLabel("Warning", 4483362458, Color3.fromRGB(255, 159, 49),  true)
+
+local Paragraph = Tab:CreateParagraph({Title = "Paragraph Example", Content = "This is an example paragraph showing how to add text content to your UI."})
+
+
+-- Tab 2 elements
+local Section2 = Tab2:CreateSection("Section")
+
+local ColorPicker2 = Tab2:CreateColorPicker({
+   Name = "Color Picker 2",
+   Color = Color3.fromRGB(255,255,255),
+   Flag = "ColorPicfsefker1",
+   Callback = function(Value)
+   end
+})
+
+local Slider2 = Tab2:CreateSlider({
+   Name = "Slider Example 2",
+   Range = {0, 100},
+   Increment = 10,
+   Suffix = "Bananas",
+   CurrentValue = 80,
+   Flag = "Slidefefsr1",
+   Callback = function(Value)
+   end,
+})
+
+local Input2 = Tab2:CreateInput({
+   Name = "Input Example 2",
+   CurrentValue = '',
+   PlaceholderText = "Input Placeholder",
+   Flag = 'dawdawd',
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
    end,
 })
 

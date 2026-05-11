@@ -13,7 +13,10 @@
 ]]
 
 -- Carrega Design Tokens (Fase 1c+)
-local Tokens = pcall(require, script.Parent.design_tokens) and require(script.Parent.design_tokens) or nil
+local Tokens = nil
+if script and script.Parent and script.Parent:FindFirstChild("design_tokens") then
+	Tokens = pcall(require, script.Parent.design_tokens) and require(script.Parent.design_tokens) or nil
+end
 if not Tokens then
 	-- Fallback inline mínimo caso design_tokens.lua não exista
 	Tokens = {
@@ -208,7 +211,12 @@ local useStudio = RunService:IsStudio() or false
 
 local settingsCreated = false
 local settingsInitialized = false -- Whether the UI elements in the settings page have been set to the proper values
-local prompt = useStudio and require(script.Parent.prompt) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Sirius/refs/heads/request/prompt.lua')
+local prompt = nil
+if useStudio and script and script.Parent and script.Parent:FindFirstChild("prompt") then
+	prompt = require(script.Parent.prompt)
+else
+	prompt = loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Sirius/refs/heads/request/prompt.lua')
+end
 local requestFunc = (syn and syn.request) or (fluxus and fluxus.request) or (http and http.request) or http_request or request
 
 -- Validate prompt loaded correctly
@@ -831,7 +839,12 @@ local RayfieldLibrary = {
 -- Interface Management
 
 local RayfieldAssetId = customAssetId or 10804731440
-local Rayfield = useStudio and script.Parent:FindFirstChild('Rayfield') or game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+local Rayfield = nil
+if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
+	Rayfield = script.Parent:FindFirstChild('Rayfield')
+else
+	Rayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+end
 local buildAttempts = 0
 local correctBuild = false
 local warned
@@ -853,7 +866,13 @@ repeat
 	end
 
 	local toDestroy
-	toDestroy, Rayfield = Rayfield, useStudio and script.Parent:FindFirstChild('Rayfield') or game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+	local newRayfield = nil
+	if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
+		newRayfield = script.Parent:FindFirstChild('Rayfield')
+	else
+		newRayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+	end
+	toDestroy, Rayfield = Rayfield, newRayfield
 	if toDestroy and not useStudio then toDestroy:Destroy() end
 
 	buildAttempts = buildAttempts + 1
@@ -1030,7 +1049,12 @@ Rayfield.DisplayOrder = 100
 LoadingFrame.Version.Text = Release
 
 -- Thanks to Latte Softworks for the Lucide integration for Roblox
-local Icons = useStudio and require(script.Parent.icons) or loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
+local Icons = nil
+if useStudio and script and script.Parent and script.Parent:FindFirstChild("icons") then
+	Icons = require(script.Parent.icons)
+else
+	Icons = loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
+end
 -- Variables
 
 local CFileName = nil
@@ -1706,7 +1730,7 @@ local function SaveConfiguration()
 		end
 	end
 
-	if useStudio then
+	if useStudio and script and script.Parent then
 		if script.Parent:FindFirstChild('configuration') then script.Parent.configuration:Destroy() end
 
 		local ScreenGui = Instance.new("ScreenGui")
@@ -2493,7 +2517,7 @@ local function saveSettings() -- Save settings to config file
 	end)
 
 	if success then
-		if useStudio then
+		if useStudio and script and script.Parent then
 			if script.Parent['get.val'] then
 				script.Parent['get.val'].Value = encoded
 			end
@@ -2833,7 +2857,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 		if not Passthrough then
 			local AttemptsRemaining = Settings.KeySettings.MaxAttempts or 5
 			Rayfield.Enabled = false
-			local KeyUI = useStudio and script.Parent:FindFirstChild('Key') or game:GetObjects("rbxassetid://11380036235")[1]
+			local KeyUI = nil
+			if useStudio and script and script.Parent and script.Parent:FindFirstChild('Key') then
+				KeyUI = script.Parent:FindFirstChild('Key')
+			else
+				KeyUI = game:GetObjects("rbxassetid://11380036235")[1]
+			end
 
 			KeyUI.Enabled = true
 
