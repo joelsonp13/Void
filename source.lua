@@ -956,16 +956,17 @@ local function safeGetHui()
 end
 
 local hui = safeGetHui()
-local parentOk = false
-if hui then
-	parentOk = pcall(function() Rayfield.Parent = hui end)
-	if not parentOk then Rayfield.Parent = CoreGui end
+if hui and type(Rayfield) == "userdata" then
+	Rayfield.Parent = hui
 elseif syn and syn.protect_gui then 
-	pcall(function() syn.protect_gui(Rayfield) end)
+	syn.protect_gui(Rayfield)
 	Rayfield.Parent = CoreGui
 elseif not useStudio and CoreGui:FindFirstChild("RobloxGui") then
 	Rayfield.Parent = CoreGui:FindFirstChild("RobloxGui")
 elseif not useStudio then
+	Rayfield.Parent = CoreGui
+end
+if type(Rayfield) ~= "userdata" or not Rayfield.Parent then
 	Rayfield.Parent = CoreGui
 end
 
