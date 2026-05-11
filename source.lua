@@ -3934,10 +3934,18 @@ function RayfieldLibrary:CreateWindow(Settings)
 					Debounce = true
 					rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 45) }, "Smooth")
 					for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
-						if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" then
-							rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
-							rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
-							rfTween(DropdownOpt.Title, { TextTransparency = 1 }, "Fast")
+						if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" or DropdownOpt.Name == "__RayfieldListFilter__" then
+							if DropdownOpt:IsA("TextBox") then
+								DropdownOpt.BackgroundTransparency = 1
+								DropdownOpt.TextTransparency = 1
+								if DropdownOpt.UIStroke then
+									DropdownOpt.UIStroke.Transparency = 1
+								end
+							else
+								rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
+								rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
+								rfTween(DropdownOpt.Title, { TextTransparency = 1 }, "Fast")
+							end
 						end
 					end
 					rfTween(Dropdown.List, { ScrollBarImageTransparency = 1 }, "Fast")
@@ -3951,12 +3959,21 @@ function RayfieldLibrary:CreateWindow(Settings)
 					rfTween(Dropdown.List, { ScrollBarImageTransparency = 0.7 }, "Fast")
 					rfTween(Dropdown.Toggle, { Rotation = 0 }, "Smooth")
 					for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
-						if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" then
-							if DropdownOpt.Name ~= Dropdown.Selected.Text then
-								rfTween(DropdownOpt.UIStroke, { Transparency = 0 }, "Fast")
+						if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" or DropdownOpt.Name == "__RayfieldListFilter__" then
+							if DropdownOpt:IsA("TextBox") then
+								DropdownOpt.Visible = true
+								DropdownOpt.BackgroundTransparency = 0
+								DropdownOpt.TextTransparency = 0
+								if DropdownOpt.UIStroke then
+									DropdownOpt.UIStroke.Transparency = 0
+								end
+							else
+								if DropdownOpt.Name ~= Dropdown.Selected.Text then
+									rfTween(DropdownOpt.UIStroke, { Transparency = 0 }, "Fast")
+								end
+								rfTween(DropdownOpt, { BackgroundTransparency = 0 }, "Fast")
+								rfTween(DropdownOpt.Title, { TextTransparency = 0 }, "Fast")
 							end
-							rfTween(DropdownOpt, { BackgroundTransparency = 0 }, "Fast")
-							rfTween(DropdownOpt.Title, { TextTransparency = 0 }, "Fast")
 						end
 					end
 				end
@@ -4113,8 +4130,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 				sb.TextSize = 13
 				sb.Size = UDim2.new(1, -6, 0, 26)
 				sb.LayoutOrder = -999
+				sb.Visible = true
+				sb.BackgroundTransparency = 0
+				sb.TextTransparency = 0
 				local sbStroke = Instance.new("UIStroke")
 				sbStroke.Color = SelectedTheme.InputStroke
+				sbStroke.Transparency = 0
 				sbStroke.Parent = sb
 				sb.Parent = Dropdown.List
 				sb:GetPropertyChangedSignal("Text"):Connect(function()
