@@ -4161,6 +4161,17 @@ function RayfieldLibrary:CreateWindow(Settings)
 					end
 				end)
 
+				-- Prevent dropdown from closing when clicking on search box
+				sb.MouseButton1Down:Connect(function()
+					-- Stop propagation to prevent dropdown from closing
+					local connection
+					connection = UserInputService.InputChanged:Connect(function(input)
+						if input.UserInputType == Enum.UserInputType.MouseMovement then
+							connection:Disconnect()
+						end
+					end)
+				end)
+
 				-- Auto-focus search box when dropdown opens
 				Dropdown.Interact.MouseButton1Click:Connect(function()
 					if Dropdown.List.Visible then
