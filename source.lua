@@ -4123,11 +4123,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 				searchFrame.UIStroke.Transparency = 0
 				searchFrame.BackgroundColor3 = SelectedTheme.SecondaryElementBackground
 				searchFrame.LayoutOrder = -999
-				
+				searchFrame.Size = UDim2.new(1, 0, 0, 36)
+
 				local sb = Instance.new("TextBox")
 				sb.Name = "SearchInput"
-				sb.BackgroundColor3 = Color3.new(0, 0, 0)
-				sb.BackgroundTransparency = 1
+				sb.BackgroundColor3 = SelectedTheme.InputBackground
+				sb.BackgroundTransparency = 0
 				sb.TextColor3 = SelectedTheme.TextColor
 				sb.PlaceholderText = "Filtrar opções…"
 				sb.PlaceholderColor3 = SelectedTheme.MutedText or Color3.fromRGB(150, 150, 150)
@@ -4136,16 +4137,35 @@ function RayfieldLibrary:CreateWindow(Settings)
 				sb.Font = Enum.Font.Gotham
 				sb.TextSize = 13
 				sb.TextXAlignment = Enum.TextXAlignment.Left
-				sb.Size = UDim2.new(1, -24, 1, 0)
-				sb.Position = UDim2.new(0, 12, 0, 0)
+				sb.Size = UDim2.new(1, -24, 0, 28)
+				sb.Position = UDim2.new(0, 12, 0, 4)
 				sb.Parent = searchFrame
-				
+
+				-- Add stroke to search box
+				local sbStroke = Instance.new("UIStroke")
+				sbStroke.Color = SelectedTheme.InputStroke
+				sbStroke.Thickness = 1
+				sbStroke.Parent = sb
+
+				-- Add corner to search box
+				local sbCorner = Instance.new("UICorner")
+				sbCorner.CornerRadius = UDim.new(0, 6)
+				sbCorner.Parent = sb
+
 				sb:GetPropertyChangedSignal("Text"):Connect(function()
 					local q = string.lower(sb.Text)
 					for _, ch in ipairs(Dropdown.List:GetChildren()) do
 						if isDropdownOptionRow(ch) or ch.Name == "__RayfieldSelectAll__" then
 							ch.Visible = q == "" or string.find(string.lower(ch.Name), q, 1, true) ~= nil
 						end
+					end
+				end)
+
+				-- Auto-focus search box when dropdown opens
+				Dropdown.Interact.MouseButton1Click:Connect(function()
+					if Dropdown.List.Visible then
+						task.wait(0.1) -- Small delay to ensure dropdown is fully open
+						sb:CaptureFocus()
 					end
 				end)
 			end
