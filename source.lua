@@ -923,31 +923,19 @@ local function safeGetHui()
 	return nil
 end
 
-print("[DEBUG] typeof(Rayfield)=" .. typeof(Rayfield) .. " type(Rayfield)=" .. type(Rayfield))
-print("[DEBUG] Rayfield.Name=" .. tostring(Rayfield and Rayfield.Name))
 local hui = safeGetHui()
-print("[DEBUG] hui type=" .. type(hui) .. " typeof=" .. (pcall(typeof, hui) and typeof(hui) or "?"))
+local parentOk = false
 if hui then
-	print("[DEBUG] Setting Rayfield.Parent = hui")
-	local ok, err = pcall(function()
-		Rayfield.Parent = hui
-	end)
-	if not ok then
-		print("[DEBUG] ERROR Rayfield.Parent = hui: " .. tostring(err))
-		Rayfield.Parent = CoreGui
-	end
+	parentOk = pcall(function() Rayfield.Parent = hui end)
+	if not parentOk then Rayfield.Parent = CoreGui end
 elseif syn and syn.protect_gui then 
-	print("[DEBUG] syn.protect_gui path")
-	syn.protect_gui(Rayfield)
+	pcall(function() syn.protect_gui(Rayfield) end)
 	Rayfield.Parent = CoreGui
 elseif not useStudio and CoreGui:FindFirstChild("RobloxGui") then
-	print("[DEBUG] RobloxGui path")
 	Rayfield.Parent = CoreGui:FindFirstChild("RobloxGui")
 elseif not useStudio then
-	print("[DEBUG] CoreGui fallback path")
 	Rayfield.Parent = CoreGui
 end
-print("[DEBUG] Rayfield.Parent set successfully, Parent=" .. tostring(Rayfield.Parent))
 
 if hui then
 	for _, Interface in ipairs(hui:GetChildren()) do
