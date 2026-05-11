@@ -876,39 +876,7 @@ local Rayfield = nil
 if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
 	Rayfield = script.Parent:FindFirstChild('Rayfield')
 else
-	-- game:GetObjects pode retornar uma table aninhada em alguns executores
-	local got = game:GetObjects("rbxassetid://"..RayfieldAssetId)
-	if type(got) == "table" and #got > 0 then
-		-- Desempacota recursivamente se o resultado for uma table dentro de table
-		local candidate = got[1]
-		while type(candidate) == "table" and #candidate > 0 and type(candidate[1]) ~= "number" do
-			candidate = candidate[1]
-		end
-		if type(candidate) == "userdata" then
-			Rayfield = candidate
-		elseif type(got[1]) == "userdata" then
-			Rayfield = got[1]
-		else
-			-- Último recurso: procura a primeira userdata na hierarquia
-			for _, v in ipairs(got) do
-				if type(v) == "userdata" then
-					Rayfield = v
-					break
-				elseif type(v) == "table" then
-					for _, v2 in ipairs(v) do
-						if type(v2) == "userdata" then
-							Rayfield = v2
-							break
-						end
-					end
-				end
-				if Rayfield then break end
-			end
-		end
-	end
-	if not Rayfield then
-		Rayfield = got[1] -- fallback desesperado
-	end
+	Rayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
 end
 local buildAttempts = 0
 local correctBuild = false
@@ -945,19 +913,8 @@ until buildAttempts >= 2
 
 Rayfield.Enabled = false
 
-local function safeGetHui()
-	if gethui then
-		local ok, hui = pcall(gethui)
-		if ok and type(hui) == "userdata" then
-			return hui
-		end
-	end
-	return nil
-end
-
-local hui = safeGetHui()
-if hui and type(Rayfield) == "userdata" then
-	Rayfield.Parent = hui
+if gethui then
+	Rayfield.Parent = gethui()
 elseif syn and syn.protect_gui then 
 	syn.protect_gui(Rayfield)
 	Rayfield.Parent = CoreGui
@@ -966,12 +923,9 @@ elseif not useStudio and CoreGui:FindFirstChild("RobloxGui") then
 elseif not useStudio then
 	Rayfield.Parent = CoreGui
 end
-if type(Rayfield) ~= "userdata" or not Rayfield.Parent then
-	Rayfield.Parent = CoreGui
-end
 
-if hui then
-	for _, Interface in ipairs(hui:GetChildren()) do
+if gethui then
+	for _, Interface in ipairs(gethui():GetChildren()) do
 		if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
 			Interface.Enabled = false
 			Interface.Name = "Rayfield-Old"
@@ -1198,16 +1152,10 @@ local function mergeThemeTables(defaultT, overrideT)
 end
 
 local function rfTween(inst, props, motionName)
-	if type(inst) ~= "userdata" then return end
-	local ok, err = pcall(function()
-		if DesignTokensMod and DesignTokensMod.Tween then
-			DesignTokensMod.Tween(inst, props, motionName or "Smooth", performanceTier):Play()
-		else
-			TweenService:Create(inst, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
-		end
-	end)
-	if not ok then
-		warn("[rfTween] Error: " .. tostring(err) .. " motion=" .. tostring(motionName or "nil"))
+	if DesignTokensMod and DesignTokensMod.Tween then
+		DesignTokensMod.Tween(inst, props, motionName or "Smooth", performanceTier):Play()
+	else
+		TweenService:Create(inst, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
 	end
 end
 
@@ -2955,9 +2903,9 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 			KeyUI.Enabled = true
 
-			if hui then
-				KeyUI.Parent = hui
-			elseif syn and syn.protect_gui then
+			if gethui then
+				KeyUI.Parent = gethui()
+			elseif syn and syn.protect_gui then 
 				syn.protect_gui(KeyUI)
 				KeyUI.Parent = CoreGui
 			elseif not useStudio and CoreGui:FindFirstChild("RobloxGui") then
@@ -2966,8 +2914,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 				KeyUI.Parent = CoreGui
 			end
 
-			if hui then
-				for _, Interface in ipairs(hui:GetChildren()) do
+			if gethui then
+				for _, Interface in ipairs(gethui():GetChildren()) do
 					if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
 						Interface.Enabled = false
 						Interface.Name = "KeyUI-Old"
