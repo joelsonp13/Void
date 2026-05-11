@@ -3923,7 +3923,10 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 			Dropdown.Toggle.Rotation = 180
 
+			local SearchBoxFocused = false
+
 			Dropdown.Interact.MouseButton1Click:Connect(function()
+				if SearchBoxFocused then return end
 				rfTween(Dropdown, { BackgroundColor3 = SelectedTheme.ElementBackgroundHover }, "Fast")
 				rfTween(Dropdown.UIStroke, { Transparency = 1 }, "Fast")
 				task.wait(0.1)
@@ -4161,34 +4164,25 @@ function RayfieldLibrary:CreateWindow(Settings)
 					end
 				end)
 
-				-- Prevent dropdown from closing when clicking on search box
-				sb.MouseButton1Down:Connect(function()
-					-- Stop propagation to prevent dropdown from closing
-					Dropdown.Interact.Active = false
-					task.wait()
-					Dropdown.Interact.Active = true
-				end)
+-- Prevent dropdown from closing when clicking on search box
+			sb.MouseButton1Down:Connect(function()
+				SearchBoxFocused = true
+			end)
+			sb.MouseButton1Up:Connect(function()
+				task.wait()
+				SearchBoxFocused = false
+			end)
 
-				-- Also prevent the search frame itself from triggering dropdown close
-				searchFrame.MouseButton1Down:Connect(function()
-					Dropdown.Interact.Active = false
-					task.wait()
-					Dropdown.Interact.Active = true
-				end)
+			-- Also prevent the search frame itself from triggering dropdown close
+			searchFrame.MouseButton1Down:Connect(function()
+				SearchBoxFocused = true
+			end)
+			searchFrame.MouseButton1Up:Connect(function()
+				task.wait()
+				SearchBoxFocused = false
+			end)
 
-				-- Prevent the dropdown from closing when clicking on search box by stopping event propagation
-				sb.MouseButton1Click:Connect(function()
-					-- This will prevent the dropdown from closing
-					return
-				end)
-
-				-- Also prevent the search frame itself from triggering dropdown close
-				searchFrame.MouseButton1Click:Connect(function()
-					-- This will prevent the dropdown from closing
-					return
-				end)
-
-				-- Auto-focus search box when dropdown opens
+-- Auto-focus search box when dropdown opens
 				Dropdown.Interact.MouseButton1Click:Connect(function()
 					if Dropdown.List.Visible then
 						task.wait(0.1) -- Small delay to ensure dropdown is fully open
