@@ -13,6 +13,10 @@
 ]]
 
 -- Environment Check (precisa ser definido ANTES de qualquer uso de useStudio/script)
+local function getService(name)
+	local service = game:GetService(name)
+	return if cloneref then cloneref(service) else service
+end
 local HttpService = getService('HttpService')
 local RunService = getService('RunService')
 local useStudio = RunService:IsStudio() or false
@@ -28,7 +32,7 @@ if useStudio and script and script.Parent and script.Parent:FindFirstChild("desi
 end
 if not Tokens then
 	-- Tenta carregar via HTTP (para executors que não têm o módulo local)
-	local fetchSuccess, fetchResult = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/joelsonp13/Void/main/design_tokens.lua")
+	local fetchSuccess, fetchResult = pcall(readfile, "design_tokens.lua")
 	if fetchSuccess and #fetchResult > 0 then
 		local execSuccess, execResult = pcall(function()
 			return loadstring(fetchResult)()
@@ -103,10 +107,6 @@ end
 
 if debugX then
 	warn('Initialising Rayfield Premium')
-end
-local function getService(name)
-	local service = game:GetService(name)
-	return if cloneref then cloneref(service) else service
 end
 
 -- Services
@@ -361,7 +361,7 @@ local ANALYTICS_TOKEN = "05de7f9fd320d3b8428cd1c77014a337b85b6c8efee2c5914f5ab57
 
 local reporter = nil
 if not requestsDisabled and not useStudio then
-	local fetchSuccess, fetchResult = pcall((game :: any).HttpGet, game, "https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/reporter.lua")
+	local fetchSuccess, fetchResult = pcall(readfile, "reporter.lua")
 	if fetchSuccess and #fetchResult > 0 then
 		local execSuccess, Analytics = pcall(function()
 			return (loadstring(fetchResult) :: any)()
@@ -1085,7 +1085,17 @@ local Icons = nil
 if useStudio and script and script.Parent and script.Parent:FindFirstChild("icons") then
 	Icons = require(script.Parent.icons)
 else
-	Icons = loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
+	local fetchSuccess, fetchResult = pcall(readfile, "icons.lua")
+	if fetchSuccess and #fetchResult > 0 then
+		local execSuccess, execResult = pcall(function()
+			return loadstring(fetchResult)()
+		end)
+		if execSuccess and type(execResult) == "table" then
+			Icons = execResult
+		end
+	else
+		Icons = loadWithTimeout('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua')
+	end
 end
 -- Variables
 
