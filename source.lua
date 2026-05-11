@@ -2323,9 +2323,11 @@ local function setupCommandPalette()
 		
 		local ctrl = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
 		if ctrl and input.KeyCode == Enum.KeyCode.P then
-			local focus = GuiService:GetFocusedTextBox()
-			if focus and not focus:IsDescendantOf(Rayfield) then
-				return
+			if GuiService.GetFocusedTextBox then
+				local focus = GuiService:GetFocusedTextBox()
+				if focus and not focus:IsDescendantOf(Rayfield) then
+					return
+				end
 			end
 			if paletteOpen then
 				closeCommandPalette()
@@ -5198,6 +5200,9 @@ function RayfieldLibrary:CreateContextMenu(config)
 	layout.Padding = UDim.new(0, 2)
 	layout.Parent = menuFrame
 	
+	-- Cria ctx primeiro (vazio) para que os botões possam referenciá-lo
+	local ctx = {}
+	
 	local items = config.Items or {}
 	local totalHeight = 8
 	
@@ -5243,7 +5248,9 @@ function RayfieldLibrary:CreateContextMenu(config)
 			end)
 			btn.MouseButton1Click:Connect(function()
 				pcall(item.Callback)
-				ctx:Hide()
+				if ctx and ctx.Hide then
+					ctx:Hide()
+				end
 			end)
 			if DesignTokensMod and DesignTokensMod.ApplyTypographyRole then
 				DesignTokensMod.ApplyTypographyRole(btn, "Body", item.Color or SelectedTheme.TextColor)
@@ -5255,50 +5262,49 @@ function RayfieldLibrary:CreateContextMenu(config)
 	
 	menuFrame.Size = UDim2.new(0, 180, 0, totalHeight)
 	
-	local ctx = {
-		_show = function(x, y)
-			-- Fecha context menus anteriores
-			while #activeContextMenus > 0 do
-				local old = table.remove(activeContextMenus)
-				pcall(old.Hide)
+	-- Adiciona as funções ao ctx
+	ctx._show = function(x, y)
+		-- Fecha context menus anteriores
+		while #activeContextMenus > 0 do
+			local old = table.remove(activeContextMenus)
+			pcall(old.Hide)
+		end
+		
+		local zTooltip = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Tooltip) or 50
+		menuFrame.ZIndex = zTooltip
+		
+		-- Atualiza tema
+		menuFrame.BackgroundColor3 = SelectedTheme.Background
+		stroke.Color = SelectedTheme.ElementStroke
+		for _, child in ipairs(menuFrame:GetChildren()) do
+			if child:IsA("TextButton") then
+				child.TextColor3 = SelectedTheme.TextColor
+				child.BackgroundColor3 = SelectedTheme.ElementBackground
 			end
-			
-			local zTooltip = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Tooltip) or 50
-			menuFrame.ZIndex = zTooltip
-			
-			-- Atualiza tema
-			menuFrame.BackgroundColor3 = SelectedTheme.Background
-			stroke.Color = SelectedTheme.ElementStroke
-			for _, child in ipairs(menuFrame:GetChildren()) do
-				if child:IsA("TextButton") then
-					child.TextColor3 = SelectedTheme.TextColor
-					child.BackgroundColor3 = SelectedTheme.ElementBackground
-				end
-				if child:IsA("Frame") then
-					child.BackgroundColor3 = SelectedTheme.ElementStroke
-				end
+			if child:IsA("Frame") then
+				child.BackgroundColor3 = SelectedTheme.ElementStroke
 			end
-			
-			-- Posiciona
-			local absX = x or UserInputService:GetMouseLocation().X
-			local absY = y or UserInputService:GetMouseLocation().Y
-			menuFrame.Position = UDim2.fromOffset(absX, absY)
-			menuFrame.Visible = true
-			menuFrame.Parent = Rayfield
-			
-			table.insert(activeContextMenus, ctx)
-		end,
-		Hide = function()
-			menuFrame.Visible = false
-			menuFrame.Parent = nil
-			for i, v in ipairs(activeContextMenus) do
-				if v == ctx then
-					table.remove(activeContextMenus, i)
-					break
-				end
+		end
+		
+		-- Posiciona
+		local absX = x or UserInputService:GetMouseLocation().X
+		local absY = y or UserInputService:GetMouseLocation().Y
+		menuFrame.Position = UDim2.fromOffset(absX, absY)
+		menuFrame.Visible = true
+		menuFrame.Parent = Rayfield
+		
+		table.insert(activeContextMenus, ctx)
+	end
+	ctx.Hide = function()
+		menuFrame.Visible = false
+		menuFrame.Parent = nil
+		for i, v in ipairs(activeContextMenus) do
+			if v == ctx then
+				table.remove(activeContextMenus, i)
+				break
 			end
-		end,
-	}
+		end
+	end
 	
 	function ctx:Show(x, y)
 		self:_show(x, y)
