@@ -876,7 +876,39 @@ local Rayfield = nil
 if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
 	Rayfield = script.Parent:FindFirstChild('Rayfield')
 else
-	Rayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+	-- game:GetObjects pode retornar uma table aninhada em alguns executores
+	local got = game:GetObjects("rbxassetid://"..RayfieldAssetId)
+	if type(got) == "table" and #got > 0 then
+		-- Desempacota recursivamente se o resultado for uma table dentro de table
+		local candidate = got[1]
+		while type(candidate) == "table" and #candidate > 0 and type(candidate[1]) ~= "number" do
+			candidate = candidate[1]
+		end
+		if type(candidate) == "userdata" then
+			Rayfield = candidate
+		elseif type(got[1]) == "userdata" then
+			Rayfield = got[1]
+		else
+			-- Último recurso: procura a primeira userdata na hierarquia
+			for _, v in ipairs(got) do
+				if type(v) == "userdata" then
+					Rayfield = v
+					break
+				elseif type(v) == "table" then
+					for _, v2 in ipairs(v) do
+						if type(v2) == "userdata" then
+							Rayfield = v2
+							break
+						end
+					end
+				end
+				if Rayfield then break end
+			end
+		end
+	end
+	if not Rayfield then
+		Rayfield = got[1] -- fallback desesperado
+	end
 end
 local buildAttempts = 0
 local correctBuild = false
