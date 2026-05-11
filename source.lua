@@ -3923,6 +3923,32 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 			Dropdown.Toggle.Rotation = 180
 
+			-- Track mouse position and dropdown state for proper click handling
+			local function isMouseOverDropdown()
+				local mousePos = UserInputService:GetMouseLocation()
+				local dropdownAbsPos = Dropdown.AbsolutePosition
+				local dropdownAbsSize = Dropdown.AbsoluteSize
+
+				-- Check if mouse is over the main dropdown area
+				if mousePos.X >= dropdownAbsPos.X and mousePos.X <= dropdownAbsPos.X + dropdownAbsSize.X and
+				   mousePos.Y >= dropdownAbsPos.Y and mousePos.Y <= dropdownAbsPos.Y + dropdownAbsSize.Y then
+					return true
+				end
+
+				-- If dropdown list is visible, check if mouse is over the list area
+				if Dropdown.List.Visible then
+					local listAbsPos = Dropdown.List.AbsolutePosition
+					local listAbsSize = Dropdown.List.AbsoluteSize
+
+					if mousePos.X >= listAbsPos.X and mousePos.X <= listAbsPos.X + listAbsSize.X and
+					   mousePos.Y >= listAbsPos.Y and mousePos.Y <= listAbsPos.Y + listAbsSize.Y then
+						return true
+					end
+				end
+
+				return false
+			end
+
 			Dropdown.Interact.MouseButton1Click:Connect(function()
 				rfTween(Dropdown, { BackgroundColor3 = SelectedTheme.ElementBackgroundHover }, "Fast")
 				rfTween(Dropdown.UIStroke, { Transparency = 1 }, "Fast")
@@ -3931,35 +3957,28 @@ function RayfieldLibrary:CreateWindow(Settings)
 				rfTween(Dropdown.UIStroke, { Transparency = 0 }, "Fast")
 				if Debounce then return end
 				if Dropdown.List.Visible then
-					-- Check if search box is active before closing
-					local searchFilter = Dropdown.List:FindFirstChild("__RayfieldListFilter__")
-					if searchFilter then
-						local searchInput = searchFilter:FindFirstChild("SearchInput")
-						if searchInput and searchInput:GetAttribute("SearchActive") then
-							-- Search is active, don't close the dropdown
-							return
-						end
-					end
-
-					Debounce = true
-					rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 45) }, "Smooth")
-					for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
-						if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" or DropdownOpt.Name == "__RayfieldListFilter__" then
-							if DropdownOpt.Name == "__RayfieldListFilter__" then
-								rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
-								rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
-							else
-								rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
-								rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
-								rfTween(DropdownOpt.Title, { TextTransparency = 1 }, "Fast")
+					-- Only close if mouse is NOT over the dropdown or its list
+					if not isMouseOverDropdown() then
+						Debounce = true
+						rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 45) }, "Smooth")
+						for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
+							if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" or DropdownOpt.Name == "__RayfieldListFilter__" then
+								if DropdownOpt.Name == "__RayfieldListFilter__" then
+									rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
+									rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
+								else
+									rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
+									rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
+									rfTween(DropdownOpt.Title, { TextTransparency = 1 }, "Fast")
+								end
 							end
 						end
+						rfTween(Dropdown.List, { ScrollBarImageTransparency = 1 }, "Fast")
+						rfTween(Dropdown.Toggle, { Rotation = 180 }, "Smooth")
+						task.wait(0.35)
+						Dropdown.List.Visible = false
+						Debounce = false
 					end
-					rfTween(Dropdown.List, { ScrollBarImageTransparency = 1 }, "Fast")
-					rfTween(Dropdown.Toggle, { Rotation = 180 }, "Smooth")
-					task.wait(0.35)
-					Dropdown.List.Visible = false
-					Debounce = false
 				else
 					rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 180) }, "Smooth")
 					Dropdown.List.Visible = true
