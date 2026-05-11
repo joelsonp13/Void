@@ -843,7 +843,12 @@ local Rayfield = nil
 if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
 	Rayfield = script.Parent:FindFirstChild('Rayfield')
 else
-	Rayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+	local got = game:GetObjects("rbxassetid://"..RayfieldAssetId)
+	print("got from GetObjects:", got)
+	print("type(got):", type(got))
+	print("got[1]:", got[1])
+	print("typeof(got[1]):", typeof(got[1]))
+	Rayfield = got[1]
 end
 local buildAttempts = 0
 local correctBuild = false
@@ -870,18 +875,37 @@ repeat
 	if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
 		newRayfield = script.Parent:FindFirstChild('Rayfield')
 	else
-		newRayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+		local got2 = game:GetObjects("rbxassetid://"..RayfieldAssetId)
+		newRayfield = got2[1]
 	end
+	print("newRayfield type:", typeof(newRayfield))
+	print("newRayfield is Instance:", typeof(newRayfield) == "Instance")
 	toDestroy, Rayfield = Rayfield, newRayfield
 	if toDestroy and not useStudio then toDestroy:Destroy() end
 
 	buildAttempts = buildAttempts + 1
 until buildAttempts >= 2
 
+print("Rayfield type after repeat loop:", type(Rayfield))
+if type(Rayfield) == "table" then
+	print("Rayfield table keys:", table.concat(table.keys(Rayfield) or {}, ", "))
+end
+print("gethui exists:", gethui ~= nil)
+if gethui then
+	print("gethui type:", type(gethui))
+	print("gethui() type:", type(gethui()))
+end
 Rayfield.Enabled = false
 
 if gethui then
-	Rayfield.Parent = gethui()
+	local hui = gethui()
+	print("hui type:", type(hui))
+	if typeof(hui) == "Instance" then
+		Rayfield.Parent = hui
+	else
+		-- Fallback to CoreGui
+		Rayfield.Parent = CoreGui
+	end
 elseif syn and syn.protect_gui then 
 	syn.protect_gui(Rayfield)
 	Rayfield.Parent = CoreGui
@@ -892,10 +916,21 @@ elseif not useStudio then
 end
 
 if gethui then
-	for _, Interface in ipairs(gethui():GetChildren()) do
-		if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
-			Interface.Enabled = false
-			Interface.Name = "Rayfield-Old"
+	local hui = gethui()
+	if typeof(hui) == "Instance" then
+		for _, Interface in ipairs(hui:GetChildren()) do
+			if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
+				Interface.Enabled = false
+				Interface.Name = "Rayfield-Old"
+			end
+		end
+	else
+		-- Fallback to CoreGui
+		for _, Interface in ipairs(CoreGui:GetChildren()) do
+			if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
+				Interface.Enabled = false
+				Interface.Name = "Rayfield-Old"
+			end
 		end
 	end
 elseif not useStudio then
@@ -2867,7 +2902,12 @@ function RayfieldLibrary:CreateWindow(Settings)
 			KeyUI.Enabled = true
 
 			if gethui then
-				KeyUI.Parent = gethui()
+				local hui = gethui()
+				if typeof(hui) == "Instance" then
+					KeyUI.Parent = hui
+				else
+					KeyUI.Parent = CoreGui
+				end
 			elseif syn and syn.protect_gui then 
 				syn.protect_gui(KeyUI)
 				KeyUI.Parent = CoreGui
@@ -2878,10 +2918,20 @@ function RayfieldLibrary:CreateWindow(Settings)
 			end
 
 			if gethui then
-				for _, Interface in ipairs(gethui():GetChildren()) do
-					if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
-						Interface.Enabled = false
-						Interface.Name = "KeyUI-Old"
+				local hui = gethui()
+				if typeof(hui) == "Instance" then
+					for _, Interface in ipairs(hui:GetChildren()) do
+						if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
+							Interface.Enabled = false
+							Interface.Name = "KeyUI-Old"
+						end
+					end
+				else
+					for _, Interface in ipairs(CoreGui:GetChildren()) do
+						if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
+							Interface.Enabled = false
+							Interface.Name = "KeyUI-Old"
+						end
 					end
 				end
 			elseif not useStudio then
