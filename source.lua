@@ -21,6 +21,13 @@ local HttpService = getService('HttpService')
 local RunService = getService('RunService')
 local useStudio = RunService:IsStudio() or false
 
+-- Services (definidos ANTES do DesignTokens para evitar nil)
+local UserInputService = getService("UserInputService")
+local GuiService = getService("GuiService")
+local TweenService = getService("TweenService")
+local Players = getService("Players")
+local CoreGui = getService("CoreGui")
+
 -- Carrega Design Tokens (Fase 1c+)
 -- Tenta carregar localmente (Studio), depois via HTTP (executors), por último fallback inline
 local Tokens = nil
@@ -108,13 +115,6 @@ end
 if debugX then
 	warn('Initialising Rayfield Premium')
 end
-
--- Services
-local UserInputService = getService("UserInputService")
-local GuiService = getService("GuiService")
-local TweenService = getService("TweenService")
-local Players = getService("Players")
-local CoreGui = getService("CoreGui")
 
 -- Loads and executes a function hosted on a remote URL. Cancels the request if the requested URL takes too long to respond.
 -- Errors with the function are caught and logged to the output
