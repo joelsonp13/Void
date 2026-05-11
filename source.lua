@@ -5267,7 +5267,9 @@ function RayfieldLibrary:CreateContextMenu(config)
 		-- Fecha context menus anteriores
 		while #activeContextMenus > 0 do
 			local old = table.remove(activeContextMenus)
-			pcall(old.Hide)
+			if old and old.Hide then
+				pcall(function() old:Hide() end)
+			end
 		end
 		
 		local zTooltip = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Tooltip) or 50
