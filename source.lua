@@ -3935,12 +3935,9 @@ function RayfieldLibrary:CreateWindow(Settings)
 					rfTween(Dropdown, { Size = UDim2.new(1, -10, 0, 45) }, "Smooth")
 					for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
 						if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" or DropdownOpt.Name == "__RayfieldListFilter__" then
-							if DropdownOpt:IsA("TextBox") then
-								DropdownOpt.BackgroundTransparency = 1
-								DropdownOpt.TextTransparency = 1
-								if DropdownOpt.UIStroke then
-									DropdownOpt.UIStroke.Transparency = 1
-								end
+							if DropdownOpt.Name == "__RayfieldListFilter__" then
+								rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
+								rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
 							else
 								rfTween(DropdownOpt, { BackgroundTransparency = 1 }, "Fast")
 								rfTween(DropdownOpt.UIStroke, { Transparency = 1 }, "Fast")
@@ -3960,13 +3957,10 @@ function RayfieldLibrary:CreateWindow(Settings)
 					rfTween(Dropdown.Toggle, { Rotation = 0 }, "Smooth")
 					for _, DropdownOpt in ipairs(Dropdown.List:GetChildren()) do
 						if isDropdownOptionRow(DropdownOpt) or DropdownOpt.Name == "__RayfieldSelectAll__" or DropdownOpt.Name == "__RayfieldListFilter__" then
-							if DropdownOpt:IsA("TextBox") then
+							if DropdownOpt.Name == "__RayfieldListFilter__" then
 								DropdownOpt.Visible = true
-								DropdownOpt.BackgroundTransparency = 0
-								DropdownOpt.TextTransparency = 0
-								if DropdownOpt.UIStroke then
-									DropdownOpt.UIStroke.Transparency = 0
-								end
+								rfTween(DropdownOpt, { BackgroundTransparency = 0 }, "Fast")
+								rfTween(DropdownOpt.UIStroke, { Transparency = 0 }, "Fast")
 							else
 								if DropdownOpt.Name ~= Dropdown.Selected.Text then
 									rfTween(DropdownOpt.UIStroke, { Transparency = 0 }, "Fast")
@@ -4119,25 +4113,33 @@ function RayfieldLibrary:CreateWindow(Settings)
 			SetDropdownOptions()
 
 			if DropdownSettings.ListSearch and not Dropdown.List:FindFirstChild("__RayfieldListFilter__") then
+				local searchFrame = Elements.Template.Dropdown.List.Template:Clone()
+				searchFrame.Name = "__RayfieldListFilter__"
+				searchFrame.Title.Text = ""
+				searchFrame.Title.TextTransparency = 1
+				searchFrame.Parent = Dropdown.List
+				searchFrame.Visible = true
+				searchFrame.BackgroundTransparency = 0
+				searchFrame.UIStroke.Transparency = 0
+				searchFrame.BackgroundColor3 = SelectedTheme.SecondaryElementBackground
+				searchFrame.LayoutOrder = -999
+				
 				local sb = Instance.new("TextBox")
-				sb.Name = "__RayfieldListFilter__"
-				sb.BackgroundColor3 = SelectedTheme.InputBackground
+				sb.Name = "SearchInput"
+				sb.BackgroundColor3 = Color3.new(0, 0, 0)
+				sb.BackgroundTransparency = 1
 				sb.TextColor3 = SelectedTheme.TextColor
 				sb.PlaceholderText = "Filtrar opções…"
+				sb.PlaceholderColor3 = SelectedTheme.MutedText or Color3.fromRGB(150, 150, 150)
 				sb.Text = ""
 				sb.ClearTextOnFocus = false
 				sb.Font = Enum.Font.Gotham
 				sb.TextSize = 13
-				sb.Size = UDim2.new(1, -6, 0, 26)
-				sb.LayoutOrder = -999
-				sb.Visible = true
-				sb.BackgroundTransparency = 0
-				sb.TextTransparency = 0
-				local sbStroke = Instance.new("UIStroke")
-				sbStroke.Color = SelectedTheme.InputStroke
-				sbStroke.Transparency = 0
-				sbStroke.Parent = sb
-				sb.Parent = Dropdown.List
+				sb.TextXAlignment = Enum.TextXAlignment.Left
+				sb.Size = UDim2.new(1, -24, 1, 0)
+				sb.Position = UDim2.new(0, 12, 0, 0)
+				sb.Parent = searchFrame
+				
 				sb:GetPropertyChangedSignal("Text"):Connect(function()
 					local q = string.lower(sb.Text)
 					for _, ch in ipairs(Dropdown.List:GetChildren()) do
