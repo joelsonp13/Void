@@ -12,6 +12,11 @@
 
 ]]
 
+-- Environment Check (precisa ser definido ANTES de qualquer uso de useStudio/script)
+local HttpService = getService('HttpService')
+local RunService = getService('RunService')
+local useStudio = RunService:IsStudio() or false
+
 -- Carrega Design Tokens (Fase 1c+)
 -- Tenta carregar localmente (Studio), depois via HTTP (executors), por último fallback inline
 local Tokens = nil
@@ -235,12 +240,6 @@ end
 if requestsDisabled then
 	overrideSetting("System", "usageAnalytics", false)
 end
-
-local HttpService = getService('HttpService')
-local RunService = getService('RunService')
-
--- Environment Check
-local useStudio = RunService:IsStudio() or false
 
 local settingsCreated = false
 local settingsInitialized = false -- Whether the UI elements in the settings page have been set to the proper values

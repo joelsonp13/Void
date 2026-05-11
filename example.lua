@@ -1,162 +1,286 @@
 debugX = true
 
--- Carrega a biblioteca Rayfield do repositório GitHub
+-- Carrega a biblioteca Rayfield Premium (Void Overhaul)
 local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/joelsonp13/Void/main/source.lua'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Rayfield Example Window",
-   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
-   LoadingTitle = "Rayfield Interface Suite",
-   LoadingSubtitle = "by Sirius",
-   Theme = "Default", -- "PremiumDark", "AMOLED", etc. Partial custom themes merge with Default keys.
-   CommandPalette = false, -- true: Ctrl+P palette (abas + Rayfield:RegisterCommand)
-   PerformanceFX = "Medium", -- "Low" | "Medium" | "Ultra" — afeta duração das tweens dos tokens
-   -- Tab:CreateSearchBox({ SaveRecent = true }) grava últimas pesquisas em Rayfield/SearchRecent.json
-   -- Tab:CreateMultiDropdown({ ListSearch = true, ... }) adiciona caixa "Filtrar opções" na lista
+   Name = "Void Premium",
+   Icon = 0,
+   LoadingTitle = "Void Premium Overhaul",
+   LoadingSubtitle = "by Lunara Void",
+   Theme = "PremiumDark", -- 🔥 Tema premium ativado
+   CommandPalette = true, -- Ctrl+P para buscar abas/comandos
+   PerformanceFX = "Ultra", -- Animações completas (ripple, glow, bounce)
 
    DisableRayfieldPrompts = false,
-   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+   DisableBuildWarnings = false,
 
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = nil, -- Create a custom folder for your hub/game
-      FileName = "Big Hub"
+      FolderName = nil,
+      FileName = "VoidHub"
    },
 
    Discord = {
-      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
-      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
-      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
    },
 
-   KeySystem = false, -- Set this to true to use our key system
+   KeySystem = false,
    KeySettings = {
       Title = "Untitled",
       Subtitle = "Key System",
-      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
-      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
-      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
-      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
-      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+      Note = "No method of obtaining the key is provided",
+      FileName = "Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"Hello"}
    }
 })
 
-local Tab = Window:CreateTab("Tab 1", 4483362458) -- Title, Image
-local Tab2 = Window:CreateTab("Tab 2", 'key-round') -- Title, Image (Lucide icon)
-
-local Section = Tab:CreateSection("Section Example")
-
-local Button = Tab:CreateButton({
-   Name = "Change Theme",
-   Callback = function()
-      Window.ModifyTheme('DarkBlue')
-   end,
-})
-
-local Toggle = Tab:CreateToggle({
-   Name = "Toggle Example",
-   CurrentValue = false,
-   Flag = "Toggle1adwawd",
-   Callback = function(Value)
-      print("Toggle value changed to:", Value)
-   end,
-})
-
-local ColorPicker = Tab:CreateColorPicker({
-   Name = "Color Picker",
-   Color = Color3.fromRGB(255,255,255),
-   Flag = "ColorPicker1awd",
-   Callback = function(Value)
-      print("Color selected:", Value)
-   end
-})
-
-local Slider = Tab:CreateSlider({
-   Name = "Slider Example",
-   Range = {0, 100},
-   Increment = 10,
-   Suffix = "Bananas",
-   CurrentValue = 40,
-   Flag = "Slider1dawd",
-   Callback = function(Value)
-      print("Slider value:", Value)
-   end,
-})
-
-local Input = Tab:CreateInput({
-   Name = "Input Example",
-   CurrentValue = "Helo",
-   PlaceholderText = "Adaptive Input",
-   RemoveTextAfterFocusLost = false,
-   Flag = 'Input1',
-   Callback = function(Text)
-      print("Input text:", Text)
-   end,
-})
-
-local thoptions = {}
-for themename, theme in pairs(Rayfield.Theme) do
-   table.insert(thoptions, themename)
+-- Verifica se DesignTokens carregou corretamente
+local dt = Rayfield:GetDesignTokens()
+if dt then
+   print("[VOID] DesignTokens carregado:", dt.Spacing and "OK" or "FAIL")
+   print("[VOID] Performance Tier:", Rayfield:GetPerformanceTier())
+   Rayfield:Notify({
+      Title = "Void Premium",
+      Content = "DesignTokens carregado com sucesso. Performance: " .. Rayfield:GetPerformanceTier(),
+      Duration = 5
+   })
+else
+   warn("[VOID] DesignTokens NÃO carregado - usando fallback inline")
+   Rayfield:Notify({
+      Title = "Void Premium",
+      Content = "DesignTokens não encontrado. Usando fallback inline.",
+      Duration = 5
+   })
 end
 
-local Dropdown = Tab:CreateDropdown({
-   Name = "Theme",
-   Options = thoptions,
-   CurrentOption = {"Default"},
-   MultipleOptions = false,
-   Flag = "Dropdown1",
+-- ========================
+-- ABA PRINCIPAL
+-- ========================
+local MainTab = Window:CreateTab("Main", 'home')
+
+MainTab:CreateSection("Features Premium")
+
+-- Toggle com spring bounce (DesignTokens)
+MainTab:CreateToggle({
+   Name = "Ripple Effect (Ultra)",
+   CurrentValue = true,
+   Flag = "RippleToggle",
+   Callback = function(Value)
+      print("Ripple:", Value)
+   end,
+})
+
+-- Slider com curvas suaves (DesignTokens)
+MainTab:CreateSlider({
+   Name = "Animation Speed",
+   Range = {0, 100},
+   Increment = 5,
+   Suffix = "%",
+   CurrentValue = 75,
+   Flag = "AnimSpeed",
+   Callback = function(Value)
+      print("Speed:", Value)
+   end,
+})
+
+-- Dropdown multi com busca
+local multiDropdown = MainTab:CreateMultiDropdown({
+   Name = "Módulos Ativos",
+   Options = {"ESP", "Aimbot", "Fly", "Speed", "God Mode", "TP", "Inf Jump", "Noclip"},
+   CurrentOption = {"ESP", "Aimbot", "Fly"},
+   Flag = "Modules",
+   SelectAll = true,
+   ShowSelectionCount = true,
+   ListSearch = true, -- 🔍 barra de filtro na lista
+   Callback = function(Options)
+      print("Módulos:", table.concat(Options, ", "))
+   end,
+})
+
+-- SearchBox com histórico
+MainTab:CreateSearchBox({
+   Name = "Buscar Player",
+   PlaceholderText = "Nome do jogador...",
+   SaveRecent = true,
+   ClearButton = true,
+   Flag = "PlayerSearch",
+   Callback = function(Text)
+      if #Text > 0 then
+         Rayfield:Notify({
+            Title = "Busca",
+            Content = "Procurando por: " .. Text,
+            Duration = 2
+         })
+      end
+   end,
+})
+
+MainTab:CreateDivider()
+
+-- ========================
+-- ABA FERRAMENTAS
+-- ========================
+local ToolsTab = Window:CreateTab("Tools", 'settings')
+
+ToolsTab:CreateSection("Theme Switcher")
+
+-- Troca rápida de temas premium
+local themesDropdown = ToolsTab:CreateDropdown({
+   Name = "Tema",
+   Options = {"Default", "PremiumDark", "AMOLED", "Ocean", "Amethyst", "DarkBlue", "Bloom", "Light", "Serenity", "AmberGlow", "Green"},
+   CurrentOption = {"PremiumDark"},
+   Flag = "ThemeSelect",
    Callback = function(Options)
       Window.ModifyTheme(Options[1])
    end,
 })
 
-local Keybind = Tab:CreateKeybind({
-   Name = "Keybind Example",
-   CurrentKeybind = "Q",
-   HoldToInteract = false,
-   Flag = "Keybind1",
-   Callback = function(Keybind)
-      print("Keybind pressed:", Keybind)
+ToolsTab:CreateButton({
+   Name = "Alternar Dev Overlay",
+   Callback = function()
+      Rayfield:EnableDevOverlay()
+      Rayfield:Notify({
+         Title = "Dev Overlay",
+         Content = "FPS overlay ativado no canto superior direito",
+         Duration = 3
+      })
    end,
 })
 
-local Label = Tab:CreateLabel("Label Example")
+-- Console para debug
+local console = ToolsTab:CreateConsole({
+   Name = "Debug Console",
+   MaxLines = 100,
+})
 
-local Label2 = Tab:CreateLabel("Warning", 4483362458, Color3.fromRGB(255, 159, 49),  true)
+ToolsTab:CreateButton({
+   Name = "Testar Console",
+   Callback = function()
+      console:AddLine("[INFO] DesignTokens: " .. (Rayfield:GetDesignTokens() and "Loaded" or "Fallback"))
+      console:AddLine("[INFO] Performance: " .. Rayfield:GetPerformanceTier())
+      console:AddLine("[WARN]", Color3.fromRGB(220, 180, 60))
+      console:AddLine("[ERROR] Test error message", Color3.fromRGB(200, 70, 70))
+   end,
+})
 
-local Paragraph = Tab:CreateParagraph({Title = "Paragraph Example", Content = "This is an example paragraph showing how to add text content to your UI."})
+ToolsTab:CreateDivider()
 
+ToolsTab:CreateSection("Hotkeys Globais")
 
--- Tab 2 elements
-local Section2 = Tab2:CreateSection("Section")
-
-local ColorPicker2 = Tab2:CreateColorPicker({
-   Name = "Color Picker 2",
-   Color = Color3.fromRGB(255,255,255),
-   Flag = "ColorPicfsefker1",
-   Callback = function(Value)
+-- Registra hotkeys premium
+Rayfield:RegisterHotkey({
+   Id = "quick_tp",
+   Title = "Quick TP",
+   DefaultKey = "T",
+   Mode = "Toggle",
+   Callback = function()
+      print("[Hotkey] Quick TP ativado")
    end
 })
 
-local Slider2 = Tab2:CreateSlider({
-   Name = "Slider Example 2",
-   Range = {0, 100},
-   Increment = 10,
-   Suffix = "Bananas",
-   CurrentValue = 80,
-   Flag = "Slidefefsr1",
-   Callback = function(Value)
+Rayfield:RegisterHotkey({
+   Id = "panic",
+   Title = "Panic Mode",
+   DefaultKey = "P",
+   Mode = "Toggle",
+   Callback = function()
+      Rayfield:Notify({
+         Title = "⚠️ PANIC",
+         Content = "Todos os módulos desativados!",
+         Duration = 3
+      })
+   end
+})
+
+local hotkeys = Rayfield:GetAllHotkeys()
+local hkLabels = {}
+for _, hk in ipairs(hotkeys) do
+   table.insert(hkLabels, hk.Title .. " [" .. hk.Key .. "]")
+end
+
+ToolsTab:CreateLabel("Hotkeys: " .. table.concat(hkLabels, ", "))
+
+-- ========================
+-- ABA COMANDOS
+-- ========================
+local CmdTab = Window:CreateTab("Commands", 'terminal')
+
+CmdTab:CreateSection("Command Palette (Ctrl+P)")
+
+-- Registra comandos pra palette
+Rayfield:RegisterCommand({
+   Title = "Clear Console",
+   Callback = function()
+      console:Clear()
+      Rayfield:Notify({Title = "Console", Content = "Console limpo!", Duration = 2})
+   end
+})
+
+Rayfield:RegisterCommand({
+   Title = "Toggle Theme Dark/Light",
+   Callback = function()
+      local currentTheme = themesDropdown.CurrentOption[1]
+      local newTheme = currentTheme == "PremiumDark" and "Light" or "PremiumDark"
+      Window.ModifyTheme(newTheme)
+      themesDropdown:Set({newTheme})
+   end
+})
+
+Rayfield:RegisterCommand({
+   Title = "Show Gate Checklist",
+   Callback = function()
+      local checklist = Rayfield:GetGateChecklist()
+      local text = "✅ Gate Checklist:\n"
+      for _, item in ipairs(checklist) do
+         text = text .. "  " .. item .. "\n"
+      end
+      console:AddLine(text)
+   end
+})
+
+CmdTab:CreateParagraph({
+   Title = "Como usar",
+   Content = "Pressione Ctrl+P para abrir a palette de comandos. Digite para filtrar, use ↑↓ para navegar e Enter para executar."
+})
+
+CmdTab:CreateButton({
+   Name = "Verificar Gate",
+   Callback = function()
+      local ok = Rayfield:GateCheck("example.lua")
+      Rayfield:Notify({
+         Title = "Gate Check",
+         Content = ok and "✅ Todas as features premium ativas!" or "❌ DesignTokens não carregado",
+         Duration = 3
+      })
    end,
 })
 
-local Input2 = Tab2:CreateInput({
-   Name = "Input Example 2",
-   CurrentValue = '',
-   PlaceholderText = "Input Placeholder",
-   Flag = 'dawdawd',
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
+-- Context Menu demo (clique direito)
+CmdTab:CreateButton({
+   Name = "Demo Context Menu",
+   Callback = function()
+      local ctx = Rayfield:CreateContextMenu({
+         Items = {
+            { Title = "Copiar", Callback = function() print("Copiado!") end },
+            { Title = "Colar", Callback = function() print("Colado!") end },
+            { Divider = true },
+            { Title = "Deletar", Callback = function() print("Deletado!") end, Color = Color3.fromRGB(200, 70, 70) },
+         }
+      })
+      ctx:Show()
    end,
 })
 
 Rayfield:LoadConfiguration()
+
+-- Notificação inicial
+Rayfield:Notify({
+   Title = "Void Premium Overhaul",
+   Content = "Build UU2NX | v1.746 Premium\nDesignTokens: " .. (Rayfield:GetDesignTokens() and "OK" or "Fallback") .. "\nCtrl+P para abrir comandos",
+   Duration = 8
+})
