@@ -916,7 +916,7 @@ Rayfield.Enabled = false
 local function safeGetHui()
 	if gethui then
 		local ok, hui = pcall(gethui)
-		if ok and typeof(hui) == "Instance" then
+		if ok and type(hui) == "userdata" then
 			return hui
 		end
 	end
