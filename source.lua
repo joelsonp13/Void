@@ -913,8 +913,19 @@ until buildAttempts >= 2
 
 Rayfield.Enabled = false
 
-if gethui then
-	Rayfield.Parent = gethui()
+local function safeGetHui()
+	if gethui then
+		local ok, hui = pcall(gethui)
+		if ok and typeof(hui) == "Instance" then
+			return hui
+		end
+	end
+	return nil
+end
+
+local hui = safeGetHui()
+if hui then
+	Rayfield.Parent = hui
 elseif syn and syn.protect_gui then 
 	syn.protect_gui(Rayfield)
 	Rayfield.Parent = CoreGui
@@ -924,8 +935,8 @@ elseif not useStudio then
 	Rayfield.Parent = CoreGui
 end
 
-if gethui then
-	for _, Interface in ipairs(gethui():GetChildren()) do
+if hui then
+	for _, Interface in ipairs(hui:GetChildren()) do
 		if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
 			Interface.Enabled = false
 			Interface.Name = "Rayfield-Old"
@@ -2903,9 +2914,9 @@ function RayfieldLibrary:CreateWindow(Settings)
 
 			KeyUI.Enabled = true
 
-			if gethui then
-				KeyUI.Parent = gethui()
-			elseif syn and syn.protect_gui then 
+			if hui then
+				KeyUI.Parent = hui
+			elseif syn and syn.protect_gui then
 				syn.protect_gui(KeyUI)
 				KeyUI.Parent = CoreGui
 			elseif not useStudio and CoreGui:FindFirstChild("RobloxGui") then
@@ -2914,8 +2925,8 @@ function RayfieldLibrary:CreateWindow(Settings)
 				KeyUI.Parent = CoreGui
 			end
 
-			if gethui then
-				for _, Interface in ipairs(gethui():GetChildren()) do
+			if hui then
+				for _, Interface in ipairs(hui:GetChildren()) do
 					if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
 						Interface.Enabled = false
 						Interface.Name = "KeyUI-Old"
