@@ -1198,10 +1198,16 @@ local function mergeThemeTables(defaultT, overrideT)
 end
 
 local function rfTween(inst, props, motionName)
-	if DesignTokensMod and DesignTokensMod.Tween then
-		DesignTokensMod.Tween(inst, props, motionName or "Smooth", performanceTier):Play()
-	else
-		TweenService:Create(inst, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
+	if type(inst) ~= "userdata" then return end
+	local ok, err = pcall(function()
+		if DesignTokensMod and DesignTokensMod.Tween then
+			DesignTokensMod.Tween(inst, props, motionName or "Smooth", performanceTier):Play()
+		else
+			TweenService:Create(inst, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
+		end
+	end)
+	if not ok then
+		warn("[rfTween] Error: " .. tostring(err) .. " motion=" .. tostring(motionName or "nil"))
 	end
 end
 
