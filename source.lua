@@ -5779,7 +5779,7 @@ local SidebarInstances = {}
 
 function RayfieldLibrary:CreateSidebar(config, windowObj)
     config = config or {}
-    if not windowObj then return end
+    if not windowObj then windowObj = Rayfield end
     local zSidebar = (DesignTokensMod and DesignTokensMod.ZIndex and DesignTokensMod.ZIndex.Sidebar) or 5
     local zSidebarChrome = zSidebar + 1
     local zSidebarItem = zSidebar + 2

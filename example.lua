@@ -192,8 +192,9 @@ local themesDropdown = ToolsTab:CreateDropdown({
    Flag = "ThemeSelect",
    ListSearch = true,
    Callback = function(Options)
-      print(string.format("[VOID] 🎨 Troca de tema: %s -> %s", themesDropdown.CurrentOption[1] or "Unknown", Options[1]))
-      Window.ModifyTheme(Options[1])
+      local newTheme = Options[1]
+      print(string.format("[VOID] 🎨 Tema selecionado: %s", newTheme))
+      Window.ModifyTheme(newTheme)
       print("[VOID] ✅ Tema alterado com sucesso!")
    end,
 })
@@ -448,7 +449,7 @@ AdvancedTab:CreateButton({
       local sidebar = Rayfield:CreateSidebar({
          Name = "Void Sidebar",
          Collapsed = false
-      })
+      }, Window)
 
       print("[VOID] 📁 Adicionando categoria Navegação...")
       sidebar:AddCategory({
