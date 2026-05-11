@@ -13,19 +13,47 @@
 ]]
 
 -- Carrega Design Tokens (Fase 1c+)
+-- Tenta carregar localmente (Studio), depois via HTTP (executors), por último fallback inline
 local Tokens = nil
-if script and script.Parent and script.Parent:FindFirstChild("design_tokens") then
-	Tokens = pcall(require, script.Parent.design_tokens) and require(script.Parent.design_tokens) or nil
+if useStudio and script and script.Parent and script.Parent:FindFirstChild("design_tokens") then
+	local ok, result = pcall(require, script.Parent.design_tokens)
+	if ok and type(result) == "table" then
+		Tokens = result
+	end
 end
 if not Tokens then
-	-- Fallback inline mínimo caso design_tokens.lua não exista
+	-- Tenta carregar via HTTP (para executors que não têm o módulo local)
+	local fetchSuccess, fetchResult = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/joelsonp13/Void/main/design_tokens.lua")
+	if fetchSuccess and #fetchResult > 0 then
+		local execSuccess, execResult = pcall(function()
+			return loadstring(fetchResult)()
+		end)
+		if execSuccess and type(execResult) == "table" then
+			Tokens = execResult
+		end
+	end
+end
+if not Tokens then
+	-- Fallback inline mínimo caso design_tokens.lua não exista (assinatura alinhada com o módulo real)
 	Tokens = {
 		Spacing = { XS = 4, SM = 8, MD = 12, LG = 16, XL = 24 },
 		Radius = { SM = 6, MD = 8, LG = 12, XL = 16 },
 		ZIndex = { Base = 1, Sidebar = 5, Dropdown = 10, Overlay = 20, Modal = 30, Notifications = 40, Tooltip = 50 },
-		GetMotion = function(name) return TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out) end,
-		Tween = function(instance, props, motionName)
-			return TweenService:Create(instance, Tokens.GetMotion(motionName or "Smooth"), props)
+		GetMotion = function(name, performanceTier)
+			local defs = {
+				Instant = { duration = 0.05, style = Enum.EasingStyle.Quad, dir = Enum.EasingDirection.Out },
+				Fast = { duration = 0.15, style = Enum.EasingStyle.Quad, dir = Enum.EasingDirection.Out },
+				Smooth = { duration = 0.35, style = Enum.EasingStyle.Quint, dir = Enum.EasingDirection.Out },
+				Bouncy = { duration = 0.45, style = Enum.EasingStyle.Back, dir = Enum.EasingDirection.Out },
+				Elastic = { duration = 0.55, style = Enum.EasingStyle.Elastic, dir = Enum.EasingDirection.Out },
+				Slow = { duration = 0.75, style = Enum.EasingStyle.Quint, dir = Enum.EasingDirection.Out },
+				Emphasis = { duration = 0.65, style = Enum.EasingStyle.Exponential, dir = Enum.EasingDirection.Out },
+			}
+			local def = defs[name] or defs.Smooth
+			return TweenInfo.new(def.duration, def.style, def.dir)
+		end,
+		Tween = function(instance, props, motionName, performanceTier)
+			return TweenService:Create(instance, Tokens.GetMotion(motionName or "Smooth", performanceTier), props)
 		end,
 		MergeTheme = function(defaultTheme, override)
 			if not override then return defaultTheme end
@@ -59,6 +87,11 @@ if not Tokens then
 		ApplyTypographyRole = function(textObject, role, themeTextColor)
 			if themeTextColor then textObject.TextColor3 = themeTextColor end
 		end,
+		ApplyShadowTier = function(uiStroke, imageShadow, tierName)
+			if uiStroke then uiStroke.Thickness = 1 end
+			if imageShadow then imageShadow.ImageTransparency = 0.85 end
+		end,
+		Opacity = { Backdrop = 0.5, Disabled = 0.45, Hint = 0.35, MutedStroke = 0.85 },
 	}
 	warn("Rayfield Premium: design_tokens.lua not found, using inline fallback")
 end
@@ -843,12 +876,7 @@ local Rayfield = nil
 if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
 	Rayfield = script.Parent:FindFirstChild('Rayfield')
 else
-	local got = game:GetObjects("rbxassetid://"..RayfieldAssetId)
-	print("got from GetObjects:", got)
-	print("type(got):", type(got))
-	print("got[1]:", got[1])
-	print("typeof(got[1]):", typeof(got[1]))
-	Rayfield = got[1]
+	Rayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
 end
 local buildAttempts = 0
 local correctBuild = false
@@ -875,37 +903,18 @@ repeat
 	if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
 		newRayfield = script.Parent:FindFirstChild('Rayfield')
 	else
-		local got2 = game:GetObjects("rbxassetid://"..RayfieldAssetId)
-		newRayfield = got2[1]
+		newRayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
 	end
-	print("newRayfield type:", typeof(newRayfield))
-	print("newRayfield is Instance:", typeof(newRayfield) == "Instance")
 	toDestroy, Rayfield = Rayfield, newRayfield
 	if toDestroy and not useStudio then toDestroy:Destroy() end
 
 	buildAttempts = buildAttempts + 1
 until buildAttempts >= 2
 
-print("Rayfield type after repeat loop:", type(Rayfield))
-if type(Rayfield) == "table" then
-	print("Rayfield table keys:", table.concat(table.keys(Rayfield) or {}, ", "))
-end
-print("gethui exists:", gethui ~= nil)
-if gethui then
-	print("gethui type:", type(gethui))
-	print("gethui() type:", type(gethui()))
-end
 Rayfield.Enabled = false
 
 if gethui then
-	local hui = gethui()
-	print("hui type:", type(hui))
-	if typeof(hui) == "Instance" then
-		Rayfield.Parent = hui
-	else
-		-- Fallback to CoreGui
-		Rayfield.Parent = CoreGui
-	end
+	Rayfield.Parent = gethui()
 elseif syn and syn.protect_gui then 
 	syn.protect_gui(Rayfield)
 	Rayfield.Parent = CoreGui
@@ -916,21 +925,10 @@ elseif not useStudio then
 end
 
 if gethui then
-	local hui = gethui()
-	if typeof(hui) == "Instance" then
-		for _, Interface in ipairs(hui:GetChildren()) do
-			if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
-				Interface.Enabled = false
-				Interface.Name = "Rayfield-Old"
-			end
-		end
-	else
-		-- Fallback to CoreGui
-		for _, Interface in ipairs(CoreGui:GetChildren()) do
-			if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
-				Interface.Enabled = false
-				Interface.Name = "Rayfield-Old"
-			end
+	for _, Interface in ipairs(gethui():GetChildren()) do
+		if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
+			Interface.Enabled = false
+			Interface.Name = "Rayfield-Old"
 		end
 	end
 elseif not useStudio then
@@ -1132,6 +1130,10 @@ do
 	end)
 	if ok and mod then
 		DesignTokensMod = mod
+	end
+	-- Fallback: usa o Tokens global se disponível (carregado via HTTP ou fallback inline)
+	if not DesignTokensMod and Tokens and type(Tokens) == "table" then
+		DesignTokensMod = Tokens
 	end
 end
 
@@ -2902,12 +2904,7 @@ function RayfieldLibrary:CreateWindow(Settings)
 			KeyUI.Enabled = true
 
 			if gethui then
-				local hui = gethui()
-				if typeof(hui) == "Instance" then
-					KeyUI.Parent = hui
-				else
-					KeyUI.Parent = CoreGui
-				end
+				KeyUI.Parent = gethui()
 			elseif syn and syn.protect_gui then 
 				syn.protect_gui(KeyUI)
 				KeyUI.Parent = CoreGui
@@ -2918,20 +2915,10 @@ function RayfieldLibrary:CreateWindow(Settings)
 			end
 
 			if gethui then
-				local hui = gethui()
-				if typeof(hui) == "Instance" then
-					for _, Interface in ipairs(hui:GetChildren()) do
-						if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
-							Interface.Enabled = false
-							Interface.Name = "KeyUI-Old"
-						end
-					end
-				else
-					for _, Interface in ipairs(CoreGui:GetChildren()) do
-						if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
-							Interface.Enabled = false
-							Interface.Name = "KeyUI-Old"
-						end
+				for _, Interface in ipairs(gethui():GetChildren()) do
+					if Interface.Name == KeyUI.Name and Interface ~= KeyUI then
+						Interface.Enabled = false
+						Interface.Name = "KeyUI-Old"
 					end
 				end
 			elseif not useStudio then
