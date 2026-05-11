@@ -839,7 +839,7 @@ local RayfieldLibrary = {
 -- Interface Management
 
 local RayfieldAssetId = customAssetId or 10804731440
-local Rayfield = nil
+local Rayfield
 if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
 	Rayfield = script.Parent:FindFirstChild('Rayfield')
 else
@@ -866,13 +866,11 @@ repeat
 	end
 
 	local toDestroy
-	local newRayfield = nil
 	if useStudio and script and script.Parent and script.Parent:FindFirstChild('Rayfield') then
-		newRayfield = script.Parent:FindFirstChild('Rayfield')
+		toDestroy, Rayfield = Rayfield, script.Parent:FindFirstChild('Rayfield')
 	else
-		newRayfield = game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
+		toDestroy, Rayfield = Rayfield, game:GetObjects("rbxassetid://"..RayfieldAssetId)[1]
 	end
-	toDestroy, Rayfield = Rayfield, newRayfield
 	if toDestroy and not useStudio then toDestroy:Destroy() end
 
 	buildAttempts = buildAttempts + 1
@@ -880,8 +878,13 @@ until buildAttempts >= 2
 
 Rayfield.Enabled = false
 
-if gethui then
-	Rayfield.Parent = gethui()
+local function isInstance(v)
+	return typeof(v) == "Instance"
+end
+
+local hui = gethui and gethui() or nil
+if hui and isInstance(hui) then
+	Rayfield.Parent = hui
 elseif syn and syn.protect_gui then 
 	syn.protect_gui(Rayfield)
 	Rayfield.Parent = CoreGui
@@ -891,8 +894,8 @@ elseif not useStudio then
 	Rayfield.Parent = CoreGui
 end
 
-if gethui then
-	for _, Interface in ipairs(gethui():GetChildren()) do
+if hui and isInstance(hui) then
+	for _, Interface in ipairs(hui:GetChildren()) do
 		if Interface.Name == Rayfield.Name and Interface ~= Rayfield then
 			Interface.Enabled = false
 			Interface.Name = "Rayfield-Old"
